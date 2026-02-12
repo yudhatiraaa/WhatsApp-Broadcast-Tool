@@ -1,0 +1,2897 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Broadcast Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00a884;
+            --primary-hover: #008f6f;
+            --bg-color: #e9edef;
+            --bg-body: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #111b21;
+            --text-secondary: #54656f;
+            --border: #e9edef;
+            --sidebar-bg: #ffffff;
+            --sidebar-active: #e7fce3;
+            --danger: #ea0038;
+            --warning: #ffc107;
+            --input-bg: #ffffff;
+        }
+
+        body.dark-mode {
+            --bg-color: #111b21;
+            --card-bg: #202c33;
+            --text-main: #e9edef;
+            --text-secondary: #8696a0;
+            --border: #222e35;
+            --input-bg: #2a3942;
+            --primary: #00a884; /* Tetap hijau WA */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .app-sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background-color: var(--sidebar-active);
+            color: var(--primary);
+        }
+
+        /* Main Content Area */
+        .app-main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .top-header {
+            background-color: var(--card-bg);
+            padding: 15px 30px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Disconnected View */
+        #disconnected-view {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 20px;
+            background-color: var(--bg-body);
+        }
+
+        /* Dashboard View */
+        #dashboard-view {
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* Tab System */
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        h2 { margin: 0; font-size: 20px; color: var(--text-main); }
+        h3 { margin: 0 0 15px 0; font-size: 16px; color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        h4 { margin: 15px 0 10px 0; font-size: 14px; color: var(--text-main); }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: var(--text-secondary); }
+        
+        textarea, input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d7db;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+            background-color: var(--input-bg);
+            color: var(--text-main);
+        }
+
+        textarea:focus, input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .note { font-size: 12px; color: var(--text-secondary); margin-top: 6px; line-height: 1.4; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary { background-color: var(--primary); color: white; width: 100%; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-secondary { background-color: #e9edef; color: var(--text-main); }
+        .btn-secondary:hover { background-color: #d1d7db; }
+
+        .btn-warning { background-color: var(--warning); color: #000; }
+        .btn-warning:hover { background-color: #e0a800; }
+        
+        .btn-sm { padding: 8px 12px; font-size: 12px; }
+
+        /* Style otomatis untuk tombol yang mati (disabled) */
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(50%);
+        }
+
+        #status {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        #log-container {
+            background: #0b141a;
+            color: #00ff9d;
+            padding: 10px;
+            border-radius: 8px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .log-entry { border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px; }
+
+        #qr-image { max-width: 100%; height: auto; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .app-sidebar {
+                position: absolute;
+                height: 100%;
+                transform: translateX(-100%);
+            }
+            .app-sidebar.open {
+                transform: translateX(0);
+            }
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Dark Mode Toggle */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-main);
+        }
+        @media (max-width: 900px) { .menu-toggle { display: block; } }
+
+        /* Utility */
+        .flex-row { display: flex; gap: 10px; align-items: center; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .text-small { font-size: 12px; color: var(--text-secondary); }
+        
+        /* Battery Status in Header */
+        #header-battery {
+            display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--text-secondary);
+            background: var(--bg-body); padding: 5px 10px; border-radius: 20px;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .modal-box {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            text-align: center;
+            animation: slideUp 0.3s ease-out;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Progress Bar Styles */
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 8px;
+            height: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Live Chat Styles */
+        .chat-layout { display: flex; height: calc(100vh - 140px); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--card-bg); }
+        .chat-sidebar { width: 300px; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--sidebar-bg); }
+        .chat-list { flex-grow: 1; overflow-y: auto; }
+        .chat-item { padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
+        .chat-item:hover { background: var(--bg-body); }
+        .chat-item.active { background: var(--sidebar-active); border-left: 4px solid var(--primary); }
+        .chat-item-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .chat-name { font-weight: 600; font-size: 14px; color: var(--text-main); }
+        .chat-time { font-size: 11px; color: var(--text-secondary); }
+        .chat-preview { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-main { flex-grow: 1; display: flex; flex-direction: column; background: #efe7dd; position: relative; }
+        .chat-header { padding: 10px 15px; background: var(--card-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; height: 55px; }
+        .chat-messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message-bubble { max-width: 70%; padding: 8px 12px; border-radius: 8px; font-size: 14px; position: relative; word-wrap: break-word; box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); }
+        .message-bubble.in { align-self: flex-start; background: white; border-top-left-radius: 0; color: #111b21; }
+        .message-bubble.out { align-self: flex-end; background: #d9fdd3; border-top-right-radius: 0; color: #111b21; }
+        .message-time { font-size: 10px; color: #999; text-align: right; margin-top: 4px; }
+        .message-bubble.pending { opacity: 0.7; }
+        .chat-input-area { padding: 10px; background: var(--card-bg); display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); }
+
+        /* Responsive Chat Styles */
+        @media (max-width: 768px) {
+            .chat-layout { height: calc(100vh - 80px); }
+            .chat-sidebar { width: 100%; border-right: none; }
+            .chat-main { display: none; width: 100%; }
+            
+            .chat-layout.mobile-active .chat-sidebar { display: none; }
+            .chat-layout.mobile-active .chat-main { display: flex; }
+            
+            #btn-back-chat { display: block !important; }
+        }
+
+        /* Reply Context Styles */
+        .reply-context {
+            padding: 8px 15px;
+            background: #f0f2f5;
+            border-left: 4px solid var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Context Menu Styles */
+        .context-menu { position: fixed; background: var(--card-bg); border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 6px; z-index: 2000; display: none; flex-direction: column; min-width: 160px; overflow: hidden; }
+        .context-menu-item { padding: 10px 15px; cursor: pointer; font-size: 13px; color: var(--text-main); display: flex; gap: 10px; align-items: center; transition: background 0.1s; }
+        .context-menu-item:hover { background-color: var(--bg-body); }
+        .context-menu-item.danger { color: var(--danger); }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="app-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span>🚀 Whatsapp Tools</span>
+        </div>
+        <div style="margin-bottom: 20px; padding: 0 10px;">
+            <label style="font-size: 12px; color: var(--text-secondary);">Akun WhatsApp:</label>
+            <select id="sessionSelect" onchange="changeSession()" style="width: 100%; padding: 8px; font-size: 13px; margin-top: 5px;">
+                <option value="session1">Session 1</option>
+            </select>
+            <button id="btn-add-account" onclick="addSession()" class="btn-secondary btn-sm" style="width: 100%; margin-top: 5px; display: none;">➕ Tambah Akun</button>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active" onclick="switchTab('broadcast')">
+                <span>📡</span> Broadcast
+            </li>
+            <li class="nav-item" onclick="switchTab('livechat')">
+                <span>💬</span> Live Chat
+            </li>
+            <li class="nav-item" onclick="switchTab('autoreply')">
+                <span>🤖</span> Auto Reply
+            </li>
+            <li class="nav-item" onclick="switchTab('settings')">
+                <span>⚙️</span> Settings
+            </li>
+        </ul>
+        <div style="margin-top: auto; text-align: center;" class="text-small">
+            &copy; Yudha Tira Pamungkas
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <header class="top-header">
+            <div class="flex-row">
+                <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                <h2 id="page-title">Dashboard</h2>
+            </div>
+            <div class="flex-row">
+                <div id="client-info" style="display:none; text-align: right; margin-right: 10px;">
+                    <div id="client-name" style="font-weight: 600; font-size: 13px;"></div>
+                    <div id="client-number" style="font-size: 11px; color: var(--text-secondary);"></div>
+                </div>
+                <div id="header-battery" style="display:none;">
+                    <span>🔋</span> <span id="battery-level-text">--%</span>
+                </div>
+                <button class="btn-secondary btn-sm" onclick="toggleTheme()">🌙 / ☀️</button>
+                <button id="btn-logout-header" class="btn-danger btn-sm" onclick="logout()" style="display: none;">Logout</button>
+            </div>
+        </header>
+
+        <!-- View when disconnected/connecting -->
+        <div id="disconnected-view">
+            <div class="card" style="max-width: 400px; width: 100%; padding: 40px;">
+                <h2 style="margin-bottom: 20px;">👋 Selamat Datang</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 30px;">Silakan scan QR Code untuk menghubungkan WhatsApp.</p>
+                
+                <div id="qr-spinner" style="margin: 20px 0; color: var(--text-secondary);">Menunggu QR Code...</div>
+                <img id="qr-image-large" src="" alt="QR Code" style="display: none; max-width: 100%; margin: 0 auto; border: 1px solid #eee; border-radius: 8px;">
+                
+                <p class="note" style="margin-top: 20px;">Buka WhatsApp > Perangkat Tertaut > Tautkan Perangkat</p>
+            </div>
+        </div>
+
+        <div class="content-body" id="dashboard-view" style="display: none;">
+            
+            <!-- TAB: BROADCAST -->
+            <div id="tab-broadcast" class="tab-pane active">
+                <div class="dashboard-grid">
+                    <!-- Kolom Kiri: Form -->
+                    <div class="card">
+                        <h3>📝 Tulis Pesan</h3>
+            <div class="form-group">
+                <label for="numbers">Daftar Nomor</label>
+                <textarea id="numbers" rows="6" placeholder="628123456789,Budi&#10;628987654321,Siti"></textarea>
+                <p class="note">Format: <strong>Nomor,Nama</strong>. Satu per baris.</p>
+                <div style="display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap;">
+                    <button onclick="removeDuplicates()" class="btn-secondary" style="font-size: 12px; flex: 1;">♻️ Hapus Duplikat</button>
+                    <button onclick="cleanNumbers()" class="btn-secondary" style="font-size: 12px; flex: 1;">🧹 Hapus Simbol</button>
+                    <button onclick="shuffleTextarea()" class="btn-secondary" style="font-size: 12px; flex: 1;">🔀 Acak List</button>
+                    <button onclick="openGroupModal()" class="btn-secondary" style="font-size: 12px; flex: 1;">📂 Import Grup</button>
+                    <button onclick="importMyContacts()" class="btn-secondary" style="font-size: 12px; flex: 1;">📒 Import Kontak HP</button>
+                    <button onclick="importAllGroups()" class="btn-secondary" style="font-size: 12px; flex: 1;">👨‍👩‍👧‍👦 Ambil ID Semua Grup</button>
+                    <button onclick="importChatList()" class="btn-secondary" style="font-size: 12px; flex: 1;">💬 Import Riwayat Chat</button>
+                </div>
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <button onclick="saveListToFile()" class="btn-secondary" style="font-size: 12px; flex: 1;">💾 Simpan List (.txt)</button>
+                    <button onclick="document.getElementById('loadListInput').click()" class="btn-secondary" style="font-size: 12px; flex: 1;">📂 Buka List (.txt)</button>
+                    <button onclick="filterByCountryCode()" class="btn-secondary" style="font-size: 12px; flex: 1;">🌍 Filter Negara</button>
+                    <input type="file" id="loadListInput" accept=".txt" style="display: none;" onchange="loadListFromFile(this)">
+                </div>
+                
+                <!-- Panel Label -->
+                <div style="margin-top: 10px; padding: 10px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px;">
+                    <label style="margin-bottom: 5px; font-size: 12px;">🏷️ Kelola Label / Grup Kontak</label>
+                    <div style="display: flex; gap: 5px;">
+                        <select id="labelSelect" style="flex: 2; padding: 8px; font-size: 12px;">
+                            <option value="">-- Pilih Label --</option>
+                        </select>
+                        <button onclick="loadLabel()" class="btn-secondary" style="flex: 1; font-size: 12px; padding: 8px;">📂 Muat</button>
+                        <button onclick="saveToLabel()" class="btn-secondary" style="flex: 1; font-size: 12px; padding: 8px;">💾 Simpan</button>
+                        <button onclick="deleteLabel()" class="btn-danger" style="flex: 0.5; font-size: 12px; padding: 8px;">❌</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="excel">Atau Upload Excel (.xlsx)</label>
+                <div style="margin-bottom: 5px;">
+                    <button onclick="downloadTemplate()" class="btn-secondary" style="width: 100%; font-size: 12px; padding: 8px;">📥 Download Template Excel</button>
+                </div>
+                <input type="file" id="excel" accept=".xlsx, .xls" onchange="handleExcelUpload(this)">
+                <div style="display: flex; gap: 5px; margin-top: 10px;">
+                    <button id="btn-check" onclick="checkNumbers()" class="btn-warning" style="flex: 1; font-size: 13px;">🔍 Cek Validitas Nomor (Filter)</button>
+                    <button id="btn-stop-check" onclick="stopCheckNumbers()" class="btn-danger" style="flex: 0 0 auto; font-size: 13px; display: none;">⛔ Stop</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="message">Pesan</label>
+                <div class="btn-group" style="margin-bottom: 10px;">
+                    <select id="templateSelect" onchange="applyTemplate()">
+                        <option value="">-- Pilih Template --</option>
+                    </select>
+                    <button onclick="saveTemplate()" class="btn-secondary btn-sm">Simpan</button>
+                    <button onclick="deleteTemplate()" class="btn-danger btn-sm">Hapus</button>
+                    <button onclick="previewMessage()" class="btn-secondary btn-sm" style="background-color: #6f42c1; color: white;">👁️ Preview</button>
+                    <button onclick="openAiModal()" class="btn-secondary btn-sm" style="background-color: #00a884; color: white;">✨ AI Caption</button>
+                </div>
+                <textarea id="message" rows="6" placeholder="Halo {name}, ini pesan broadcast..."></textarea>
+                <p class="note">Support Spintax: <strong>{Halo|Hai}</strong>. Gunakan <strong>{name}</strong> untuk nama.</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="footer">Footer Pesan (Opsional)</label>
+                <input type="text" id="footer" placeholder="Contoh: ~ Dikirim oleh Bot Broadcast">
+            </div>
+
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label for="attachment">Lampiran File</label>
+                    <input type="file" id="attachment">
+                    <p class="note">Gambar, PDF, Dokumen, dll.</p>
+                    <div style="display: flex; align-items: center; gap: 5px; margin-top: 5px;">
+                        <input type="checkbox" id="sendAsPtt" style="width: auto; margin: 0;">
+                        <label for="sendAsPtt" style="margin: 0; font-weight: normal; font-size: 12px;">Kirim sbg Voice Note (Audio)</label>
+                    </div>
+                </div>
+                <div>
+                    <label for="schedule">Jadwal Kirim</label>
+                    <input type="datetime-local" id="schedule">
+                </div>
+            </div>
+
+            <!-- Input Lokasi (Maps) -->
+            <div class="form-group" style="background: var(--input-bg); padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="toggleLocationInputs()">
+                    <label style="margin:0; cursor: pointer;">📍 Kirim Lokasi (Maps)</label>
+                    <span id="loc-toggle-icon" style="font-size: 12px;">▼</span>
+                </div>
+                <div id="location-inputs" style="display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                    <div>
+                        <label for="latitude" style="font-size: 12px;">Latitude</label>
+                        <input type="text" id="latitude" placeholder="Contoh: -6.175392">
+                    </div>
+                    <div>
+                        <label for="longitude" style="font-size: 12px;">Longitude</label>
+                        <input type="text" id="longitude" placeholder="Contoh: 106.827153">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fitur Anti-Banned -->
+            <div class="form-group" style="background: var(--bg-color); padding: 15px; border-radius: 8px;">
+                <label style="margin-bottom: 10px; color: var(--primary);">🛡️ Pengaturan Anti-Banned</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div>
+                        <label for="minDelay" style="font-size: 12px;">Min Delay (detik)</label>
+                        <input type="number" id="minDelay" value="5" min="1">
+                    </div>
+                    <div>
+                        <label for="maxDelay" style="font-size: 12px;">Max Delay (detik)</label>
+                        <input type="number" id="maxDelay" value="10" min="1">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label for="batchSize" style="font-size: 12px;">Istirahat Tiap (Pesan)</label>
+                        <input type="number" id="batchSize" value="50" min="0" placeholder="0 = Off">
+                    </div>
+                    <div>
+                        <label for="batchDelay" style="font-size: 12px;">Durasi Istirahat (detik)</label>
+                        <input type="number" id="batchDelay" value="60" min="1">
+                    </div>
+                </div>
+                <p class="note" style="margin-top: 5px;">Bot akan menunggu acak antara Min-Max detik. Jika diisi, bot akan istirahat panjang setelah sekian pesan.</p>
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; align-items: center; gap: 10px; background: var(--input-bg); padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                    <input type="checkbox" id="shuffle" style="width: auto; margin: 0;">
+                    <label for="shuffle" style="margin: 0; cursor: pointer; font-weight: normal;">🔀 Acak Urutan Pengiriman (Termasuk Excel)</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; background: var(--input-bg); padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-top: 5px;">
+                    <input type="checkbox" id="simulateTyping" style="width: auto; margin: 0;" checked>
+                    <label for="simulateTyping" style="margin: 0; cursor: pointer; font-weight: normal;">⌨️ Simulasi Mengetik (Human-like)</label>
+                </div>
+            </div>
+
+            <button id="btn-send" onclick="sendBroadcast()" class="btn-primary">🚀 Kirim Broadcast</button>
+            <button onclick="resetForm()" class="btn-secondary" style="width: 100%; margin-top: 10px;">🔄 Reset Form</button>
+                    </div>
+
+                    <!-- Kolom Kanan: Status & Log -->
+                    <div class="right-column">
+                        <div class="card">
+                            <h3>📊 Statistik</h3>
+                            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px;">
+                                <span>Sukses: <strong id="stat-success" style="color: var(--primary);">0</strong></span>
+                                <span>Gagal: <strong id="stat-failed" style="color: var(--danger);">0</strong></span>
+                            </div>
+                            <div style="font-size: 13px;">Total Target: <strong id="stat-total">0</strong></div>
+                            <div class="progress-container">
+                                <div id="progress-bar" class="progress-bar"></div>
+                            </div>
+                            <div style="text-align: right; font-size: 12px; margin-top: 5px; color: var(--text-secondary);" id="progress-text">0%</div>
+                            <div id="eta-text" style="font-size: 12px; color: var(--text-secondary); margin-top: 5px;">Estimasi Selesai: -</div>
+                            
+                            <div class="btn-group" style="margin-top: 15px;">
+                                <button id="btn-pause" onclick="pauseBroadcast()" class="btn-warning" style="flex:1; display:none;">⏸️ Pause</button>
+                                <button id="btn-resume" onclick="resumeBroadcast()" class="btn-primary" style="flex:1; display:none;">▶️ Resume</button>
+                                <button id="btn-stop" onclick="stopBroadcast()" class="btn-danger" style="flex:1" disabled>Stop</button>
+                            </div>
+                            <button id="btn-report" onclick="downloadReport()" class="btn-secondary" style="width: 100%; margin-top: 10px;" disabled>📥 Download Laporan</button>
+                        </div>
+
+                        <div id="status"></div>
+
+                        <div class="card" style="flex-grow: 1; display: flex; flex-direction: column;">
+                            <div class="flex-between" style="margin-bottom: 10px;">
+                                <h3>Terminal Log</h3>
+                                <button onclick="clearLogs()" class="btn-secondary btn-sm">🗑️ Clear</button>
+                            </div>
+                            <div id="log-container">Menunggu aktivitas...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: LIVE CHAT -->
+            <div id="tab-livechat" class="tab-pane">
+                <div class="chat-layout">
+                    <div class="chat-sidebar">
+                        <div style="padding: 10px; border-bottom: 1px solid var(--border);">
+                            <input type="text" id="chatSearch" placeholder="🔍 Cari chat..." onkeyup="filterChatList()" style="margin:0;">
+                        </div>
+                        <div class="chat-list" id="chatList">
+                            <div style="padding:20px; text-align:center; color:var(--text-secondary);">Memuat chat...</div>
+                        </div>
+                    </div>
+                    <div class="chat-main">
+                        <div class="chat-header" id="chatHeader" style="display:none;">
+                            <button id="btn-back-chat" onclick="closeChatMobile()" style="display:none; background:none; border:none; font-size:20px; margin-right:10px; cursor:pointer; color:var(--text-main);">⬅️</button>
+                            <div style="display:flex; flex-direction:column; justify-content:center;">
+                                <div style="font-weight:bold; color:var(--text-main); line-height: 1.2;" id="activeChatName">Nama</div>
+                                <div id="activeChatStatus" style="font-size:11px; color:var(--text-secondary); height: 14px;"></div>
+                            </div>
+                        </div>
+                        <div class="chat-messages" id="chatMessages">
+                            <div style="text-align:center; color:#888; margin-top:50px;">Pilih chat untuk mulai</div>
+                        </div>
+                        <!-- Area Reply (Muncul saat mau balas pesan) -->
+                        <div id="replyContext" class="reply-context" style="display:none;">
+                            <div style="flex-grow:1; overflow:hidden; margin-right:10px;">
+                                <div id="replyName" style="color:var(--primary); font-weight:bold; font-size:12px; margin-bottom:2px;">Pengirim</div>
+                                <div id="replyText" style="color:var(--text-secondary); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Pesan...</div>
+                            </div>
+                            <button onclick="cancelReply()" style="background:none; border:none; cursor:pointer; color:var(--text-secondary); font-size:18px;">&times;</button>
+                        </div>
+                        <div class="chat-input-area" id="chatInputArea" style="display:none;">
+                            <div id="chatFileUploadLoading" style="display:none; font-size:12px; color:var(--primary); margin-right:10px; white-space: nowrap;">⏳ Uploading...</div>
+                            <input type="file" id="chatFileInput" style="display:none;" onchange="sendChatFile(this)">
+                            <button class="btn-secondary btn-sm" onclick="document.getElementById('chatFileInput').click()" style="width:auto; font-size: 16px; padding: 8px 12px;" title="Kirim File/Gambar">📎</button>
+                            <input type="text" id="chatMessageInput" placeholder="Ketik pesan..." onkeypress="handleChatInputKey(event)" style="margin:0;">
+                            <button class="btn-primary btn-sm" onclick="sendChatMessage()" style="width:auto;">➤</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: AUTO REPLY -->
+            <div id="tab-autoreply" class="tab-pane">
+                <div class="card">
+                    <h3>🤖 Konfigurasi Auto Reply</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 2fr 100px 50px; gap: 10px; margin-bottom: 10px; font-weight: bold; font-size: 13px; padding: 10px; background: var(--bg-body); border-radius: 8px;">
+                        <div>Keyword</div>
+                        <div>Respon</div>
+                        <div>Tipe</div>
+                        <div>Aksi</div>
+                    </div>
+                    <div id="autoReplyList" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+                        <!-- List Rules -->
+                    </div>
+
+                    <div style="border-top: 1px solid var(--border); padding-top: 20px;">
+                        <h4>➕ Tambah Rule Baru</h4>
+                        <div class="form-group">
+                            <input type="text" id="arKeyword" placeholder="Keyword (misal: harga)">
+                        </div>
+                        <div class="form-group">
+                            <textarea id="arResponse" rows="3" placeholder="Respon bot..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <select id="arType">
+                                <option value="contains">Mengandung Kata (Contains)</option>
+                                <option value="exact">Sama Persis (Exact)</option>
+                            </select>
+                        </div>
+                        <button onclick="saveAutoReply()" class="btn-primary">Simpan Rule</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: SETTINGS -->
+            <div id="tab-settings" class="tab-pane">
+                <div class="card" style="max-width: 800px;">
+                    <h3>⚙️ Pengaturan Aplikasi</h3>
+                    
+                    <h4>🔗 Webhook Integration</h4>
+                    <div class="form-group">
+                        <label>URL Webhook (POST)</label>
+                        <input type="text" id="webhookUrlInput" placeholder="https://example.com/webhook">
+                        <p class="note">Menerima data JSON setiap ada pesan masuk.</p>
+                    </div>
+
+                    <h4>🤖 Pengaturan Auto Reply (Keyword)</h4>
+                    <div class="form-group">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="arIgnoreGroupsInput" style="width: auto; margin: 0;">
+                            <label for="arIgnoreGroupsInput" style="margin: 0; font-weight: normal;">Abaikan Pesan dari Grup</label>
+                        </div>
+                        <p class="note">Jika dicentang, auto-reply berbasis keyword tidak akan aktif di dalam grup.</p>
+                    </div>
+
+                    <h4>🧠 AI Auto Reply (Pollinations.ai)</h4>
+                    <div class="form-group">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <input type="checkbox" id="aiEnabledInput" style="width: auto; margin: 0;">
+                            <label for="aiEnabledInput" style="margin: 0; font-weight: normal;">Aktifkan AI</label>
+                        </div>
+                        <label>System Prompt (Instruksi)</label>
+                        <textarea id="aiSystemPromptInput" rows="3" placeholder="Contoh: Kamu adalah CS toko sepatu..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Batasi Topik (Opsional)</label>
+                        <input type="text" id="aiAllowedTopicsInput" placeholder="Contoh: Sepatu, Pengiriman">
+                    </div>
+                    <div class="form-group">
+                        <label>Blacklist AI (ID Grup/Nomor)</label>
+                        <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                            <button onclick="openContactModal()" class="btn-secondary btn-sm" style="width: auto;">📒 Ambil ID Kontak</button>
+                            <button onclick="openGroupModal()" class="btn-secondary btn-sm" style="width: auto;">📂 Ambil ID Grup</button>
+                        </div>
+                        <textarea id="aiBlacklistInput" rows="2" placeholder="Pisahkan dengan koma"></textarea>
+                    </div>
+                    <div class="form-group" style="margin-top: -10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="aiIgnoreGroupsInput" style="width: auto; margin: 0;">
+                            <label for="aiIgnoreGroupsInput" style="margin: 0; font-weight: normal;">Abaikan Pesan dari Grup untuk AI</label>
+                        </div>
+                        <p class="note">Jika dicentang, AI tidak akan membalas di grup manapun (prioritas di atas blacklist).</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Batas Respon AI Harian per User (0 = Unlimited)</label>
+                        <input type="number" id="aiDailyLimitInput" value="0" min="0">
+                    </div>
+
+                    <h4>📞 Pengaturan Panggilan</h4>
+                    <div class="form-group">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="autoRejectCallInput" style="width: auto; margin: 0;">
+                            <label for="autoRejectCallInput" style="margin: 0; font-weight: normal;">Auto Reject Panggilan Masuk</label>
+                        </div>
+                        <p class="note">Otomatis menolak telepon WA agar bot tidak terganggu.</p>
+                    </div>
+
+                    <h4>👋 Pesan Sambutan</h4>
+                    <div class="form-group">
+                        <label>Welcome Message</label>
+                        <textarea id="welcomeMessageInput" rows="2" placeholder="Pesan untuk nomor baru..."></textarea>
+                    </div>
+
+                    <button onclick="saveSettings()" class="btn-primary" style="margin-top: 10px;">Simpan Semua Pengaturan</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal Konfirmasi -->
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top: 0;">Konfirmasi</h3>
+            <p id="modalText">Apakah Anda yakin?</p>
+            <div class="modal-buttons">
+                <button onclick="closeModal()" class="btn-secondary">Batal</button>
+                <button id="confirmBtn" class="btn-danger">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Input (Untuk Simpan Template) -->
+    <div id="inputModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top: 0;" id="inputModalTitle">Input</h3>
+            <input type="text" id="inputModalValue" placeholder="" autocomplete="off">
+            <div class="modal-buttons">
+                <button onclick="closeInputModal()" class="btn-secondary">Batal</button>
+                <button id="inputConfirmBtn" class="btn-primary">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Import Grup -->
+    <div id="groupModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top: 0;">Pilih Grup WhatsApp</h3>
+            <p id="groupLoading" style="display:none; color: var(--text-secondary); font-size: 12px;">Sedang memuat daftar grup...</p>
+            <input type="text" id="groupSearchInput" placeholder="🔍 Cari nama grup..." style="margin-bottom: 10px; width: 100%; box-sizing: border-box;" onkeyup="filterGroups()">
+            <select id="groupSelect" style="width: 100%; margin-bottom: 15px; padding: 10px;" onchange="updateSelectedGroupId()">
+                <option value="">-- Pilih Grup --</option>
+            </select>
+            <div style="margin-bottom: 15px; text-align: left;">
+                <label style="font-size: 12px;">ID Grup (untuk Blacklist):</label>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="selectedGroupId" readonly style="font-size: 12px; background: #f0f0f0;" placeholder="Pilih grup untuk lihat ID">
+                    <button onclick="copyGroupId()" class="btn-secondary" style="padding: 8px;">📋</button>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="closeGroupModal()" class="btn-secondary">Batal</button>
+                <button onclick="importGroupMembers()" class="btn-primary">Import Anggota</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ambil ID Kontak -->
+    <div id="contactModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top: 0;">Pilih Kontak</h3>
+            <p id="contactLoading" style="display:none; color: var(--text-secondary); font-size: 12px;">Sedang memuat daftar kontak...</p>
+            <input type="text" id="contactSearchInput" placeholder="🔍 Cari nama/nomor..." style="margin-bottom: 10px; width: 100%; box-sizing: border-box;" onkeyup="filterContacts()">
+            <select id="contactSelect" style="width: 100%; margin-bottom: 15px; padding: 10px;" onchange="updateSelectedContactId()">
+                <option value="">-- Pilih Kontak --</option>
+            </select>
+            <div style="margin-bottom: 15px; text-align: left;">
+                <label style="font-size: 12px;">ID Kontak:</label>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="selectedContactId" readonly style="font-size: 12px; background: #f0f0f0;" placeholder="Pilih kontak untuk lihat ID">
+                    <button onclick="copyContactId()" class="btn-secondary" style="padding: 8px;">📋</button>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="closeContactModal()" class="btn-primary">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal AI Caption Generator -->
+    <div id="aiModal" class="modal-overlay">
+        <div class="modal-box" style="text-align: left;">
+            <h3 style="margin-top: 0;">✨ Buat Caption dengan AI</h3>
+            <div class="form-group">
+                <label style="font-size: 12px;">Nama Produk / Promo</label>
+                <input type="text" id="aiProduct" placeholder="Contoh: Sepatu Nike Air Jordan">
+            </div>
+            <div class="form-group">
+                <label style="font-size: 12px;">Harga (Opsional)</label>
+                <input type="text" id="aiPrice" placeholder="Contoh: Rp 1.500.000 (Diskon 50%)">
+            </div>
+            <div class="form-group">
+                <label style="font-size: 12px;">Detail / Keunggulan</label>
+                <textarea id="aiPromo" rows="2" placeholder="Contoh: Gratis ongkir, stok terbatas, bahan kulit asli"></textarea>
+            </div>
+            <div class="form-group">
+                <label style="font-size: 12px;">Gaya Bahasa</label>
+                <select id="aiTone">
+                    <option value="Ramah dan Persuasif">Ramah & Persuasif</option>
+                    <option value="Hype dan Seru (Banyak Emoji)">Hype & Seru 🔥</option>
+                    <option value="Formal dan Profesional">Formal & Profesional</option>
+                    <option value="Mendesak (FOMO)">Mendesak (Limited Time)</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="closeAiModal()" class="btn-secondary">Batal</button>
+                <button onclick="generateAiCaption()" id="btnGenerateAi" class="btn-primary">⚡ Buat Caption</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Forward Pesan -->
+    <div id="forwardModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top: 0;">Teruskan Pesan</h3>
+            <p id="forwardLoading" style="display:none; color: var(--text-secondary); font-size: 12px;">Memuat daftar chat...</p>
+            <input type="text" id="forwardSearchInput" placeholder="🔍 Cari chat..." style="margin-bottom: 10px; width: 100%; box-sizing: border-box;" onkeyup="filterForwardChats()">
+            <select id="forwardSelect" style="width: 100%; margin-bottom: 15px; padding: 10px;">
+                <option value="">-- Pilih Tujuan --</option>
+            </select>
+            <div class="modal-buttons">
+                <button onclick="closeForwardModal()" class="btn-secondary">Batal</button>
+                <button onclick="submitForward()" class="btn-primary">Kirim</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Preview Pesan -->
+    <div id="previewModal" class="modal-overlay">
+        <div class="modal-box" style="text-align: left; max-width: 500px;">
+            <h3 style="margin-top: 0; text-align: center;">Preview Pesan</h3>
+            <div style="background: #dcf8c6; color: #111b21; padding: 15px; border-radius: 8px; margin-bottom: 10px; white-space: pre-wrap; border: 1px solid #d1d7db; font-size: 14px;" id="previewContent"></div>
+            <p style="font-size: 12px; color: var(--text-secondary); text-align: center; margin-bottom: 20px;">*Simulasi tampilan pesan untuk penerima bernama "Budi".</p>
+            <div class="modal-buttons">
+                <button onclick="closePreviewModal()" class="btn-primary" style="width: 100%;">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu (Klik Kanan pada Pesan) -->
+    <div id="msgContextMenu" class="context-menu">
+        <div class="context-menu-item" id="ctxForward" onclick="ctxForwardAction()">➡️ Teruskan</div>
+        <div class="context-menu-item" id="ctxEdit" onclick="ctxEditAction()">✏️ Edit Pesan</div>
+        <div class="context-menu-item" id="ctxDeleteEveryone" onclick="ctxDeleteAction(true)">🗑️ Hapus untuk Semua</div>
+        <div class="context-menu-item danger" id="ctxDeleteMe" onclick="ctxDeleteAction(false)">🗑️ Hapus untuk Saya</div>
+    </div>
+
+    <script>
+        // --- Session Management ---
+        let currentSessionId = 'session1';
+        let sessionsMap = {};
+
+        async function loadSessions() {
+            try {
+                const response = await fetch('/sessions');
+                const result = await response.json();
+                const select = document.getElementById('sessionSelect');
+                select.innerHTML = '';
+                
+                const fragment = document.createDocumentFragment();
+                result.sessions.forEach(s => {
+                    // Update map
+                    sessionsMap[s.id] = { ...sessionsMap[s.id], ...s };
+
+                    const option = document.createElement('option');
+                    option.value = s.id;
+                    option.text = s.info ? `${s.info.name} (${s.id})` : s.id;
+                    fragment.appendChild(option);
+                });
+                select.appendChild(fragment);
+
+                // Restore selection
+                if (result.sessions.find(s => s.id === currentSessionId)) {
+                    select.value = currentSessionId;
+                } else if (result.sessions.length > 0) {
+                    currentSessionId = result.sessions[0].id;
+                    select.value = currentSessionId;
+                }
+                
+                updateSessionUI();
+            } catch (e) {
+                console.error('Gagal memuat sesi', e);
+            }
+        }
+
+        function changeSession() {
+            currentSessionId = document.getElementById('sessionSelect').value;
+            updateSessionUI();
+        }
+
+        async function addSession() {
+            const id = prompt('Masukkan nama sesi baru (tanpa spasi):');
+            if (!id) return;
+            await fetch('/sessions/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            loadSessions();
+        }
+
+        function updateSessionUI() {
+            const session = sessionsMap[currentSessionId] || {};
+            const disconnectedView = document.getElementById('disconnected-view');
+            const dashboardView = document.getElementById('dashboard-view');
+            const qrImage = document.getElementById('qr-image-large');
+            const qrSpinner = document.getElementById('qr-spinner');
+            const clientInfo = document.getElementById('client-info');
+            const btnLogout = document.getElementById('btn-logout-header');
+            const btnAddAccount = document.getElementById('btn-add-account');
+
+            if (session.ready) {
+                disconnectedView.style.display = 'none';
+                dashboardView.style.display = 'block';
+                
+                // Update Header Info
+                clientInfo.style.display = 'block';
+                if (session.info) {
+                    document.getElementById('client-name').innerText = session.info.name;
+                    document.getElementById('client-number').innerText = '+' + session.info.number;
+                }
+                btnLogout.style.display = 'inline-block';
+                btnAddAccount.style.display = 'inline-block';
+            } else {
+                disconnectedView.style.display = 'flex';
+                dashboardView.style.display = 'none';
+                clientInfo.style.display = 'none';
+                document.getElementById('header-battery').style.display = 'none';
+                btnLogout.style.display = 'none';
+                btnAddAccount.style.display = 'none';
+
+                if (session.qr) {
+                    qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(session.qr)}`;
+                    qrImage.style.display = 'block';
+                    qrSpinner.style.display = 'none';
+                } else {
+                    qrImage.style.display = 'none';
+                    qrSpinner.style.display = 'block';
+                }
+            }
+        }
+
+        // Load sessions on start
+        loadSessions();
+
+        // --- Tab Navigation ---
+        let chatPollingInterval;
+
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            // Show selected tab
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            // Update sidebar active state
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            // Update Title
+            const titles = { 'broadcast': 'Dashboard', 'livechat': 'Live Chat', 'autoreply': 'Auto Reply', 'settings': 'Pengaturan' };
+            document.getElementById('page-title').innerText = titles[tabId];
+
+            // Stop polling jika pindah dari tab livechat
+            if (chatPollingInterval) {
+                clearInterval(chatPollingInterval);
+                chatPollingInterval = null;
+            }
+            
+            // Stop message polling jika pindah tab selain livechat
+            if (tabId !== 'livechat') {
+                stopMessagePolling();
+            }
+
+            // Load data if needed
+            if(tabId === 'livechat') {
+                loadLiveChats();
+                // Polling: Reload chat list setiap 3 detik agar selalu update di background
+                chatPollingInterval = setInterval(() => loadLiveChats(true), 1000);
+            }
+            if(tabId === 'autoreply') loadAutoReplies();
+            if(tabId === 'settings') loadSettings();
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // Dark Mode Logic
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        }
+        // Load saved theme
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+
+        async function sendBroadcast() {
+            const numbers = document.getElementById('numbers').value;
+            const message = document.getElementById('message').value;
+            const footer = document.getElementById('footer').value;
+            const excelInput = document.getElementById('excel');
+            const attachmentInput = document.getElementById('attachment');
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+            const schedule = document.getElementById('schedule').value;
+            const minDelay = document.getElementById('minDelay').value;
+            const maxDelay = document.getElementById('maxDelay').value;
+            const batchSize = document.getElementById('batchSize').value;
+            const batchDelay = document.getElementById('batchDelay').value;
+            const shuffle = document.getElementById('shuffle').checked;
+            const simulateTyping = document.getElementById('simulateTyping').checked;
+            const sendAsPtt = document.getElementById('sendAsPtt').checked;
+            const statusDiv = document.getElementById('status');
+            const logContainer = document.getElementById('log-container');
+
+            if ((!numbers && !excelInput.files[0]) || (!message && !attachmentInput.files[0] && (!latitude || !longitude))) {
+                alert('Mohon isi daftar nomor dan konten pesan (Teks, File, atau Lokasi)!');
+                return;
+            }
+
+            showConfirmModal('Apakah Anda yakin ingin mengirim broadcast ini?', async () => {
+                statusDiv.style.display = 'block';
+                statusDiv.innerText = 'Mengirim permintaan...';
+                statusDiv.style.backgroundColor = '#f0f0f0';
+                
+                // Bersihkan log lama saat memulai broadcast baru
+                logContainer.innerHTML = '';
+
+                // Reset statistik
+                document.getElementById('stat-success').innerText = '0';
+                document.getElementById('stat-failed').innerText = '0';
+                document.getElementById('stat-total').innerText = '0';
+                document.getElementById('progress-bar').style.width = '0%';
+                document.getElementById('progress-text').innerText = '0%';
+                document.getElementById('eta-text').innerText = 'Estimasi Selesai: -';
+                
+                // Matikan tombol download laporan saat mulai baru
+                document.getElementById('btn-report').disabled = true;
+
+                // Gunakan FormData untuk mengirim file dan teks
+                const formData = new FormData();
+                formData.append('sessionId', currentSessionId);
+                formData.append('numbers', numbers);
+                formData.append('message', message);
+                formData.append('schedule', schedule);
+                formData.append('minDelay', minDelay);
+                formData.append('maxDelay', maxDelay);
+                formData.append('batchSize', batchSize);
+                formData.append('batchDelay', batchDelay);
+                formData.append('shuffle', shuffle);
+                formData.append('simulateTyping', simulateTyping);
+                formData.append('sendAsPtt', sendAsPtt);
+                formData.append('footer', footer);
+                formData.append('latitude', latitude);
+                formData.append('longitude', longitude);
+                
+                if (attachmentInput.files[0]) {
+                    formData.append('attachment', attachmentInput.files[0]);
+                }
+                if (excelInput.files[0]) {
+                    formData.append('excel', excelInput.files[0]);
+                }
+
+                try {
+                    const response = await fetch('/broadcast', {
+                        method: 'POST',
+                        body: formData // Jangan set Content-Type header secara manual saat pakai FormData
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        statusDiv.innerText = 'Berhasil: ' + result.message + ' Cek terminal/console server untuk progress detail.';
+                        statusDiv.style.backgroundColor = '#d1fae5';
+                        statusDiv.style.color = '#065f46';
+                    } else {
+                        statusDiv.innerText = 'Error: ' + result.message;
+                        statusDiv.style.backgroundColor = '#fee2e2';
+                        statusDiv.style.color = '#991b1b';
+                    }
+                } catch (error) {
+                    statusDiv.innerText = 'Gagal menghubungi server: ' + error.message;
+                    statusDiv.style.backgroundColor = '#f8d7da';
+                    statusDiv.style.color = '#721c24';
+                }
+            }, 'Kirim', 'btn-primary');
+        }
+
+        // --- Modal Logic ---
+        let currentConfirmAction = null;
+        let currentInputCallback = null;
+
+        // Modal Konfirmasi (Yes/No)
+        function showConfirmModal(message, action, btnText = 'Ya, Lanjutkan', btnClass = 'btn-danger') {
+            document.getElementById('modalText').innerText = message;
+            const btn = document.getElementById('confirmBtn');
+            btn.innerText = btnText;
+            btn.className = btnClass; // Reset class agar bisa merah/hijau
+            document.getElementById('customModal').style.display = 'flex';
+            currentConfirmAction = action;
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').style.display = 'none';
+            currentConfirmAction = null;
+        }
+
+        // Modal Input (Text Field)
+        function showInputModal(title, placeholder, callback) {
+            document.getElementById('inputModalTitle').innerText = title;
+            const input = document.getElementById('inputModalValue');
+            input.placeholder = placeholder;
+            input.value = '';
+            document.getElementById('inputModal').style.display = 'flex';
+            input.focus();
+            currentInputCallback = callback;
+        }
+
+        function closeInputModal() {
+            document.getElementById('inputModal').style.display = 'none';
+            currentInputCallback = null;
+        }
+
+        document.getElementById('confirmBtn').onclick = () => {
+            if (currentConfirmAction) currentConfirmAction();
+            closeModal();
+        };
+
+        document.getElementById('inputConfirmBtn').onclick = () => {
+            const value = document.getElementById('inputModalValue').value;
+            if (currentInputCallback) currentInputCallback(value);
+            closeInputModal();
+        };
+
+        // Support Enter key di input modal
+        document.getElementById('inputModalValue').addEventListener('keyup', function(event) {
+            if (event.key === "Enter") {
+                document.getElementById('inputConfirmBtn').click();
+            }
+        });
+
+        async function stopBroadcast() {
+            showConfirmModal('Yakin ingin menghentikan broadcast yang sedang berjalan?', async () => {
+                try {
+                    await fetch('/stop', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ sessionId: currentSessionId }) });
+                } catch (e) {
+                    alert('Gagal mengirim perintah stop');
+                }
+            }, 'Stop Broadcast', 'btn-danger');
+        }
+
+        async function pauseBroadcast() {
+            try {
+                await fetch('/pause', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ sessionId: currentSessionId }) });
+            } catch (e) {
+                alert('Gagal mengirim perintah pause');
+            }
+        }
+
+        async function resumeBroadcast() {
+            try {
+                await fetch('/resume', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ sessionId: currentSessionId }) });
+            } catch (e) {
+                alert('Gagal mengirim perintah resume');
+            }
+        }
+
+        async function logout() {
+            showConfirmModal('Apakah Anda yakin ingin logout? Sesi akan dihapus dan Anda perlu scan QR lagi.', async () => {
+                try {
+                    const response = await fetch('/logout', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ sessionId: currentSessionId }) });
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        window.location.reload();
+                    } else {
+                        alert(result.message);
+                    }
+                } catch (e) {
+                    alert('Gagal melakukan logout: ' + e.message);
+                }
+            }, 'Logout', 'btn-danger');
+        }
+
+        function downloadReport() {
+            window.location.href = '/export-report?sessionId=' + currentSessionId;
+        }
+
+        // Setup EventSource untuk menerima log real-time dari server
+        const eventSource = new EventSource('/events');
+        
+        eventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            
+            // Filter event berdasarkan sesi yang aktif
+            if (data.sessionId && data.sessionId !== currentSessionId) return;
+
+            const logContainer = document.getElementById('log-container');
+            
+            if (data.type === 'qr') {
+                if (!sessionsMap[data.sessionId]) sessionsMap[data.sessionId] = {};
+                sessionsMap[data.sessionId].qr = data.data;
+                sessionsMap[data.sessionId].ready = false;
+                if (data.sessionId === currentSessionId) updateSessionUI();
+            } else if (data.type === 'ready') {
+                if (!sessionsMap[data.sessionId]) sessionsMap[data.sessionId] = {};
+                sessionsMap[data.sessionId].ready = true;
+                sessionsMap[data.sessionId].info = data.user;
+                sessionsMap[data.sessionId].qr = null;
+                if (data.sessionId === currentSessionId) updateSessionUI();
+
+                const div = document.createElement('div'); 
+                div.className = 'log-entry';
+                div.style.color = 'green';
+                div.style.fontWeight = 'bold';
+                div.innerText = `[INFO] WhatsApp Terhubung! Siap mengirim pesan.`;
+                logContainer.appendChild(div);
+            } else if (data.type === 'battery') {
+                const batteryDiv = document.getElementById('header-battery');
+                const levelDiv = document.getElementById('battery-level-text');
+                batteryDiv.style.display = 'flex';
+                
+                const { level, charging } = data.data;
+                levelDiv.innerText = `${level}% ${charging ? '⚡' : ''}`;
+                
+                // Ubah warna jika baterai rendah (< 20%) dan tidak di-cas
+                levelDiv.style.color = (level < 20 && !charging) ? '#ea0038' : '#54656f';
+            } else if (data.type === 'broadcast_start') {
+                // Matikan tombol kirim, nyalakan tombol stop
+                const btnSend = document.getElementById('btn-send');
+                const btnStop = document.getElementById('btn-stop');
+                
+                btnSend.disabled = true;
+                btnSend.innerHTML = '⏳ Sedang Mengirim...';
+
+                // Tampilkan tombol Pause
+                document.getElementById('btn-pause').style.display = 'block';
+                
+                btnStop.disabled = false;
+            } else if (data.type === 'broadcast_end') {
+                // Nyalakan tombol kirim, matikan tombol stop
+                const btnSend = document.getElementById('btn-send');
+                const btnStop = document.getElementById('btn-stop');
+                
+                btnSend.disabled = false;
+                btnSend.innerHTML = '🚀 Kirim Broadcast';
+                
+                btnStop.disabled = true;
+                
+                // Sembunyikan tombol Pause/Resume
+                document.getElementById('btn-pause').style.display = 'none';
+                document.getElementById('btn-resume').style.display = 'none';
+
+                // Aktifkan tombol download laporan
+                document.getElementById('btn-report').disabled = false;
+            } else if (data.type === 'broadcast_paused') {
+                document.getElementById('btn-pause').style.display = 'none';
+                document.getElementById('btn-resume').style.display = 'block';
+                document.getElementById('btn-send').innerHTML = '⏸️ Sedang Dijeda';
+            } else if (data.type === 'broadcast_resumed') {
+                document.getElementById('btn-pause').style.display = 'block';
+                document.getElementById('btn-resume').style.display = 'none';
+                document.getElementById('btn-send').innerHTML = '⏳ Sedang Mengirim...';
+            } else if (data.type === 'progress') {
+                document.getElementById('stat-success').innerText = data.data.success;
+                document.getElementById('stat-failed').innerText = data.data.failed;
+                document.getElementById('stat-total').innerText = data.data.total;
+
+                const total = data.data.total;
+                const processed = data.data.success + data.data.failed;
+                if (total > 0) {
+                    const percent = Math.round((processed / total) * 100);
+                    document.getElementById('progress-bar').style.width = percent + '%';
+                    document.getElementById('progress-text').innerText = percent + '%';
+
+                    // Hitung ETA
+                    const startTime = data.data.startTime;
+                    if (startTime && processed > 0) {
+                        const elapsed = Date.now() - startTime;
+                        if (elapsed > 0) {
+                            const avgTimePerItem = elapsed / processed;
+                            const remainingItems = total - processed;
+                            const timeLeft = remainingItems * avgTimePerItem;
+
+                            const seconds = Math.floor((timeLeft / 1000) % 60);
+                            const minutes = Math.floor((timeLeft / (1000 * 60)) % 60);
+                            const hours = Math.floor((timeLeft / (1000 * 60 * 60)));
+                            document.getElementById('eta-text').innerText = `Estimasi Selesai: ${hours}j ${minutes}m ${seconds}d`;
+                        }
+                    }
+                }
+            } else if (data.type === 'check_progress') {
+                const { processed, total, current } = data.data;
+                const statusDiv = document.getElementById('status');
+                const percent = Math.round((processed / total) * 100);
+                
+                // Update Loading Bar di UI
+                statusDiv.innerHTML = `
+                    <div style="font-weight:bold; margin-bottom:5px; color:var(--text-main);">Sedang memeriksa nomor... (${processed}/${total})</div>
+                    <div style="background:#e0e0e0; height:10px; border-radius:5px; overflow:hidden; margin-bottom:5px;">
+                        <div style="background:var(--primary); width:${percent}%; height:100%; transition:width 0.2s;"></div>
+                    </div>
+                    <div style="font-size:12px; color:var(--text-secondary);">Memeriksa: ${current}</div>
+                `;
+
+                // Log ke Console Browser & Terminal Log UI
+                console.log(`[CHECK] ${processed}/${total}: ${current}`);
+                // OPTIMASI: Jangan append ke DOM log untuk setiap nomor agar tidak berat/lag
+                // const logContainer = document.getElementById('log-container');
+                // const div = document.createElement('div');
+                // div.className = 'log-entry';
+                // div.style.color = '#888'; 
+                // div.innerText = `[CHECK] ${processed}/${total}: ${current}`;
+                // logContainer.appendChild(div);
+                // logContainer.scrollTop = logContainer.scrollHeight;
+            } else if (data.type === 'log' || data.message) {
+                // Tampilkan Log Biasa
+                const msg = data.message || data; // Fallback untuk format lama
+                const div = document.createElement('div');
+                div.className = 'log-entry';
+                div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+                logContainer.appendChild(div);
+                
+                // OPTIMASI: Batasi jumlah log agar memori tidak penuh
+                if (logContainer.children.length > 200) {
+                    logContainer.removeChild(logContainer.firstChild);
+                }
+
+                logContainer.scrollTop = logContainer.scrollHeight;
+            } else if (data.type === 'new_message') {
+                // Handle pesan baru untuk Live Chat
+                handleNewMessageEvent(data.message);
+            }
+        };
+
+        // --- Logika Template ---
+        loadTemplates();
+
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/templates');
+                const templates = await response.json();
+                const select = document.getElementById('templateSelect');
+                
+                // Reset opsi, sisakan yang pertama
+                select.innerHTML = '<option value="">-- Pilih Template --</option>';
+                
+                templates.forEach(t => {
+                    const option = document.createElement('option');
+                    option.value = t.message;
+                    option.text = t.name;
+                    option.dataset.name = t.name; // Simpan nama asli untuk keperluan hapus
+                    select.appendChild(option);
+                });
+            } catch (e) {
+                console.error('Gagal memuat template', e);
+            }
+        }
+
+        function applyTemplate() {
+            const select = document.getElementById('templateSelect');
+            const messageBox = document.getElementById('message');
+            if (select.value) {
+                messageBox.value = select.value;
+            }
+        }
+
+        async function saveTemplate() {
+            const message = document.getElementById('message').value;
+            if (!message) return alert('Tulis pesan terlebih dahulu!');
+            
+            showInputModal('Simpan Template', 'Masukkan nama template...', async (name) => {
+                if (!name) return alert('Nama template tidak boleh kosong!');
+                
+                await fetch('/templates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, message })
+                });
+                alert('Template disimpan!');
+                loadTemplates();
+            });
+        }
+
+        async function deleteTemplate() {
+            const select = document.getElementById('templateSelect');
+            const selectedOption = select.options[select.selectedIndex];
+            if (!selectedOption || !selectedOption.value) return alert('Pilih template yang ingin dihapus.');
+            
+            showConfirmModal(`Hapus template "${selectedOption.text}"?`, async () => {
+                await fetch(`/templates/${encodeURIComponent(selectedOption.dataset.name)}`, { method: 'DELETE' });
+                alert('Template dihapus!');
+                loadTemplates();
+                document.getElementById('message').value = '';
+            }, 'Hapus', 'btn-danger');
+        }
+
+        async function checkNumbers() {
+            const numbers = document.getElementById('numbers').value;
+            const excelInput = document.getElementById('excel');
+            
+            if (!numbers && !excelInput.files[0]) {
+                alert('Masukkan nomor atau upload excel terlebih dahulu.');
+                return;
+            }
+
+            const statusDiv = document.getElementById('status');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '⏳ Menginisialisasi pemeriksaan...';
+            statusDiv.style.backgroundColor = 'var(--bg-body)';
+            statusDiv.style.color = 'var(--text-main)';
+            statusDiv.style.border = '1px solid var(--border)';
+
+            // Toggle tombol
+            document.getElementById('btn-check').style.display = 'none';
+            document.getElementById('btn-stop-check').style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('numbers', numbers);
+            if (excelInput.files[0]) {
+                formData.append('excel', excelInput.files[0]);
+            }
+            formData.append('sessionId', currentSessionId);
+
+            try {
+                const response = await fetch('/check-numbers', { method: 'POST', body: formData });
+                const result = await response.json();
+                
+                statusDiv.style.display = 'none';
+                if (result.status === 'success') {
+                    if (result.invalid > 0) {
+                        const textarea = document.getElementById('numbers');
+                        const lines = textarea.value.split('\n');
+                        // Normalisasi invalid list dari server (trim)
+                        const invalidSet = new Set(result.invalidList.map(n => n.trim()));
+                        
+                        // Filter baris yang valid (buang yang ada di invalidSet)
+                        const validLines = lines.filter(line => {
+                            if (!line.trim()) return false; // Skip baris kosong
+                            const numPart = line.split(',')[0].trim();
+                            return !invalidSet.has(numPart);
+                        });
+
+                        const removedCount = lines.filter(l => l.trim()).length - validLines.length;
+                        
+                        let msg = `Hasil Pemeriksaan:\n✅ Valid: ${result.valid}\n❌ Invalid: ${result.invalid}`;
+                        
+                        if (removedCount > 0) {
+                            showConfirmModal(`${msg}\n\nDitemukan ${removedCount} nomor invalid di input manual. Hapus otomatis dari daftar?`, () => {
+                                textarea.value = validLines.join('\n');
+                                alert(`Berhasil menghapus ${removedCount} nomor invalid.`);
+                            }, 'Hapus Invalid', 'btn-warning');
+                        } else {
+                            msg += `\n\n(Nomor invalid mungkin berasal dari file Excel)`;
+                            alert(msg + `\n\nDaftar Invalid:\n${result.invalidList.join(', ')}`);
+                        }
+                    } else {
+                        alert(`Semua nomor Valid! (${result.valid})`);
+                    }
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (e) {
+                statusDiv.style.display = 'none';
+                alert('Gagal memeriksa: ' + e.message);
+            } finally {
+                // Kembalikan tombol seperti semula
+                document.getElementById('btn-check').style.display = 'block';
+                document.getElementById('btn-stop-check').style.display = 'none';
+            }
+        }
+
+        async function stopCheckNumbers() {
+            try {
+                await fetch('/stop-check-numbers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: currentSessionId })
+                });
+            } catch (e) {
+                console.error('Gagal menghentikan pemeriksaan:', e);
+            }
+        }
+
+        function downloadTemplate() {
+            window.location.href = '/download-template';
+        }
+
+        async function handleExcelUpload(input) {
+            if (!input.files[0]) return;
+
+            const formData = new FormData();
+            formData.append('excel', input.files[0]);
+
+            // UI Feedback
+            const label = document.querySelector('label[for="excel"]');
+            const originalLabel = label.innerText;
+            label.innerText = "⏳ Sedang memproses & membersihkan data...";
+            input.disabled = true;
+
+            try {
+                const response = await fetch('/parse-excel', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    const textarea = document.getElementById('numbers');
+                    const currentText = textarea.value.trim();
+                    const newLines = result.data.join('\n');
+                    
+                    if (currentText) {
+                        if (confirm(`Ditemukan ${result.count} nomor bersih.\nTambahkan ke daftar yang sudah ada? (Cancel untuk menimpa)`)) {
+                            textarea.value = currentText + '\n' + newLines;
+                        } else {
+                            textarea.value = newLines;
+                        }
+                    } else {
+                        textarea.value = newLines;
+                    }
+                    alert(`✅ Berhasil memuat ${result.count} nomor dari Excel (Simbol & Data Kosong dibersihkan).`);
+                } else {
+                    alert('Gagal: ' + result.message);
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            } finally {
+                input.value = ''; // Reset input agar tidak dikirim double saat broadcast
+                input.disabled = false;
+                label.innerText = originalLabel;
+            }
+        }
+
+        function removeDuplicates() {
+            const textarea = document.getElementById('numbers');
+            if (!textarea.value.trim()) {
+                alert('Daftar nomor kosong.');
+                return;
+            }
+
+            const lines = textarea.value.split('\n');
+            const uniqueLines = [];
+            const seenNumbers = new Set();
+            let duplicateCount = 0;
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) continue; 
+
+                // Ambil nomor saja untuk pengecekan (sebelum koma)
+                const numberPart = trimmedLine.split(',')[0].replace(/\D/g, '');
+                
+                if (numberPart) {
+                    if (seenNumbers.has(numberPart)) {
+                        duplicateCount++;
+                    } else {
+                        seenNumbers.add(numberPart);
+                        uniqueLines.push(trimmedLine);
+                    }
+                }
+            }
+
+            if (duplicateCount > 0) {
+                textarea.value = uniqueLines.join('\n');
+                alert(`Berhasil menghapus ${duplicateCount} nomor duplikat.`);
+            } else {
+                alert('Tidak ditemukan nomor duplikat.');
+            }
+        }
+
+        function cleanNumbers() {
+            const textarea = document.getElementById('numbers');
+            if (!textarea.value.trim()) {
+                alert('Daftar nomor kosong.');
+                return;
+            }
+            
+            const lines = textarea.value.split('\n');
+            const cleanedLines = lines.map(line => {
+                if (!line.trim()) return '';
+                const parts = line.split(',');
+                // Hapus semua karakter selain angka pada bagian nomor
+                let number = parts[0].replace(/[^0-9]/g, '');
+                if (number.startsWith('0')) number = '62' + number.slice(1);
+                return [number, ...parts.slice(1)].join(',');
+            }).filter(line => line.trim() !== '' && line.split(',')[0].length > 0);
+            
+            textarea.value = cleanedLines.join('\n');
+            alert('Simbol dibersihkan & awalan 0 diubah menjadi 62.');
+        }
+
+        function shuffleTextarea() {
+            const textarea = document.getElementById('numbers');
+            if (!textarea.value.trim()) {
+                alert('Daftar nomor kosong.');
+                return;
+            }
+            
+            let lines = textarea.value.split('\n').filter(line => line.trim() !== '');
+            
+            // Fisher-Yates Shuffle Algorithm
+            for (let i = lines.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [lines[i], lines[j]] = [lines[j], lines[i]];
+            }
+            
+            textarea.value = lines.join('\n');
+        }
+
+        async function importAllGroups() {
+            showConfirmModal('Import semua ID Grup yang Anda ikuti ke daftar target untuk dibroadcast?', async () => {
+                try {
+                    const response = await fetch('/groups?sessionId=' + currentSessionId);
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        const textarea = document.getElementById('numbers');
+                        const currentText = textarea.value.trim();
+                        const newLines = result.groups.map(g => `${g.id},${g.name}`).join('\n');
+                        textarea.value = currentText ? currentText + '\n' + newLines : newLines;
+                        alert(`Berhasil mengimpor ${result.groups.length} grup.`);
+                    } else {
+                        alert('Gagal: ' + result.message);
+                    }
+                } catch (e) {
+                    alert('Error: ' + e.message);
+                }
+            }, 'Import Grup', 'btn-primary');
+        }
+
+        // --- Group Import Logic ---
+        let currentGroupsList = [];
+
+        async function openGroupModal() {
+            const modal = document.getElementById('groupModal');
+            const select = document.getElementById('groupSelect');
+            const loading = document.getElementById('groupLoading');
+            const searchInput = document.getElementById('groupSearchInput');
+            
+            // Reset ID display
+            if(document.getElementById('selectedGroupId')) document.getElementById('selectedGroupId').value = '';
+            searchInput.value = '';
+
+            modal.style.display = 'flex';
+            select.innerHTML = '<option value="">-- Pilih Grup --</option>';
+            select.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                const response = await fetch('/groups?sessionId=' + currentSessionId);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    currentGroupsList = result.groups;
+                    renderGroupOptions(currentGroupsList);
+                } else {
+                    alert('Gagal memuat grup: ' + result.message);
+                    closeGroupModal();
+                    return;
+                }
+            } catch (e) {
+                alert('Gagal menghubungi server. Pastikan WhatsApp terhubung.');
+                closeGroupModal();
+            } finally {
+                loading.style.display = 'none';
+                select.disabled = false;
+            }
+        }
+
+        function closeGroupModal() {
+            document.getElementById('groupModal').style.display = 'none';
+        }
+
+        function renderGroupOptions(groups) {
+            const select = document.getElementById('groupSelect');
+            select.innerHTML = '<option value="">-- Pilih Grup --</option>';
+            const fragment = document.createDocumentFragment();
+            groups.forEach(g => {
+                const option = document.createElement('option');
+                option.value = g.id;
+                option.text = g.name;
+                fragment.appendChild(option);
+            });
+            select.appendChild(fragment);
+        }
+
+        let groupSearchTimeout;
+        function filterGroups() {
+            clearTimeout(groupSearchTimeout);
+            groupSearchTimeout = setTimeout(() => {
+                const query = document.getElementById('groupSearchInput').value.toLowerCase();
+                const filtered = currentGroupsList.filter(g => g.name.toLowerCase().includes(query));
+                renderGroupOptions(filtered);
+            }, 300); // Debounce 300ms
+        }
+
+        function updateSelectedGroupId() {
+            const select = document.getElementById('groupSelect');
+            const input = document.getElementById('selectedGroupId');
+            input.value = select.value;
+        }
+
+        function copyGroupId() {
+            const input = document.getElementById('selectedGroupId');
+            if (!input.value) return;
+            navigator.clipboard.writeText(input.value).then(() => alert('ID Grup disalin!')).catch(() => alert('Gagal menyalin'));
+        }
+
+        async function importGroupMembers() {
+            const select = document.getElementById('groupSelect');
+            const groupId = select.value;
+            if (!groupId) return alert('Pilih grup terlebih dahulu!');
+
+            const btn = document.querySelector('#groupModal .btn-primary');
+            const originalText = btn.innerText;
+            btn.innerText = 'Mengambil...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`/groups/${encodeURIComponent(groupId)}/members?sessionId=` + currentSessionId);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    const textarea = document.getElementById('numbers');
+                    const currentText = textarea.value.trim();
+                    const newLines = result.members.map(m => `${m.number},${m.name}`).join('\n');
+                    
+                    textarea.value = currentText ? currentText + '\n' + newLines : newLines;
+                    
+                    alert(`Berhasil mengimpor ${result.members.length} kontak dari grup.`);
+                    closeGroupModal();
+                } else {
+                    alert('Gagal: ' + result.message);
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function importMyContacts() {
+            showConfirmModal('Import semua kontak yang tersimpan di HP?', async () => {
+                try {
+                    const response = await fetch('/contacts?sessionId=' + currentSessionId);
+                    const result = await response.json();
+
+                    if (result.status === 'success') {
+                        const textarea = document.getElementById('numbers');
+                        const currentText = textarea.value.trim();
+                        const newLines = result.contacts.map(m => `${m.number},${m.name}`).join('\n');
+                        
+                        textarea.value = currentText ? currentText + '\n' + newLines : newLines;
+                        
+                        alert(`Berhasil mengimpor ${result.contacts.length} kontak.`);
+                    } else {
+                        alert('Gagal: ' + result.message);
+                    }
+                } catch (e) {
+                    alert('Error: ' + e.message);
+                }
+            }, 'Import', 'btn-primary');
+        }
+
+        // --- Contact ID Modal Logic ---
+        let currentContactsList = [];
+
+        async function openContactModal() {
+            const modal = document.getElementById('contactModal');
+            const select = document.getElementById('contactSelect');
+            const loading = document.getElementById('contactLoading');
+            const searchInput = document.getElementById('contactSearchInput');
+            
+            if(document.getElementById('selectedContactId')) document.getElementById('selectedContactId').value = '';
+            searchInput.value = '';
+
+            modal.style.display = 'flex';
+            select.innerHTML = '<option value="">-- Pilih Kontak --</option>';
+            select.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                const response = await fetch('/contacts?sessionId=' + currentSessionId);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    // Sort by name
+                    result.contacts.sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    currentContactsList = result.contacts;
+                    renderContactOptions(currentContactsList);
+                } else {
+                    alert('Gagal memuat kontak: ' + result.message);
+                    closeContactModal();
+                    return;
+                }
+            } catch (e) {
+                alert('Gagal menghubungi server.');
+                closeContactModal();
+            } finally {
+                loading.style.display = 'none';
+                select.disabled = false;
+            }
+        }
+
+        function closeContactModal() {
+            document.getElementById('contactModal').style.display = 'none';
+        }
+
+        function renderContactOptions(contacts) {
+            const select = document.getElementById('contactSelect');
+            select.innerHTML = '<option value="">-- Pilih Kontak --</option>';
+            const fragment = document.createDocumentFragment();
+            contacts.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id; // Serialized ID
+                option.text = c.name ? `${c.name} (${c.number})` : c.number;
+                fragment.appendChild(option);
+            });
+            select.appendChild(fragment);
+        }
+
+        let contactSearchTimeout;
+        function filterContacts() {
+            clearTimeout(contactSearchTimeout);
+            contactSearchTimeout = setTimeout(() => {
+                const query = document.getElementById('contactSearchInput').value.toLowerCase();
+                const filtered = currentContactsList.filter(c => {
+                    const name = c.name ? c.name.toLowerCase() : '';
+                    const number = c.number ? c.number.toString() : '';
+                    return name.includes(query) || number.includes(query);
+                });
+                renderContactOptions(filtered);
+            }, 300); // Debounce 300ms
+        }
+
+        function updateSelectedContactId() {
+            const select = document.getElementById('contactSelect');
+            const input = document.getElementById('selectedContactId');
+            input.value = select.value;
+        }
+
+        function copyContactId() {
+            const input = document.getElementById('selectedContactId');
+            if (!input.value) return;
+            navigator.clipboard.writeText(input.value).then(() => alert('ID Kontak disalin!')).catch(() => alert('Gagal menyalin'));
+        }
+
+        function resetForm() {
+            showConfirmModal('Reset semua input form?', () => {
+                document.getElementById('numbers').value = '';
+                document.getElementById('message').value = '';
+                document.getElementById('excel').value = '';
+                document.getElementById('attachment').value = '';
+                document.getElementById('schedule').value = '';
+                document.getElementById('templateSelect').selectedIndex = 0;
+                document.getElementById('status').style.display = 'none';
+            }, 'Reset', 'btn-danger');
+        }
+
+        function toggleLocationInputs() {
+            const div = document.getElementById('location-inputs');
+            const icon = document.getElementById('loc-toggle-icon');
+            if (div.style.display === 'none') {
+                div.style.display = 'grid';
+                icon.innerText = '▲';
+            } else {
+                div.style.display = 'none';
+                icon.innerText = '▼';
+            }
+        }
+
+        // --- Preview Logic ---
+        async function previewMessage() {
+            const message = document.getElementById('message').value;
+            if (!message) return alert('Tulis pesan terlebih dahulu!');
+
+            try {
+                const response = await fetch('/preview-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const result = await response.json();
+                document.getElementById('previewContent').innerText = result.preview;
+                document.getElementById('previewModal').style.display = 'flex';
+            } catch (e) {
+                alert('Gagal memuat preview: ' + e.message);
+            }
+        }
+
+        function closePreviewModal() {
+            document.getElementById('previewModal').style.display = 'none';
+        }
+
+        // --- AI Caption Logic ---
+        function openAiModal() {
+            document.getElementById('aiModal').style.display = 'flex';
+        }
+
+        function closeAiModal() {
+            document.getElementById('aiModal').style.display = 'none';
+        }
+
+        async function generateAiCaption() {
+            const product = document.getElementById('aiProduct').value;
+            const price = document.getElementById('aiPrice').value;
+            const promo = document.getElementById('aiPromo').value;
+            const tone = document.getElementById('aiTone').value;
+            const btn = document.getElementById('btnGenerateAi');
+
+            if(!product) return alert('Nama produk harus diisi!');
+
+            const originalText = btn.innerText;
+            btn.innerText = 'Sedang berpikir...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/generate-caption', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ product, price, promo, tone })
+                });
+                const result = await response.json();
+                if(result.status === 'success') {
+                    document.getElementById('message').value = result.caption;
+                    closeAiModal();
+                } else {
+                    alert('Gagal: ' + result.message);
+                }
+            } catch(e) {
+                alert('Error: ' + e.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // --- List Management & Utils ---
+        function saveListToFile() {
+            const text = document.getElementById('numbers').value;
+            if (!text.trim()) return alert('List kosong!');
+            
+            const blob = new Blob([text], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'daftar_nomor.txt';
+            a.click();
+        }
+
+        function loadListFromFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const textarea = document.getElementById('numbers');
+                const current = textarea.value.trim();
+                textarea.value = current ? current + '\n' + e.target.result : e.target.result;
+                alert('List berhasil dimuat!');
+            };
+            reader.readAsText(file);
+            input.value = ''; // Reset input
+        }
+
+        function clearLogs() {
+            document.getElementById('log-container').innerHTML = '';
+        }
+
+        // --- Label / Tag Logic ---
+        loadLabels();
+
+        async function loadLabels() {
+            try {
+                const response = await fetch('/labels');
+                const result = await response.json();
+                const select = document.getElementById('labelSelect');
+                
+                select.innerHTML = '<option value="">-- Pilih Label --</option>';
+                if (result.status === 'success') {
+                    result.labels.forEach(l => {
+                        const option = document.createElement('option');
+                        option.value = l.name;
+                        option.text = `${l.name} (${l.count})`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (e) {
+                console.error('Gagal memuat label', e);
+            }
+        }
+
+        async function saveToLabel() {
+            const text = document.getElementById('numbers').value;
+            if (!text.trim()) return alert('Daftar nomor kosong!');
+            
+            showInputModal('Simpan Label Baru', 'Nama Label (misal: Pelanggan VIP)', async (name) => {
+                if (!name) return alert('Nama label harus diisi!');
+                
+                const numbers = text.split('\n').map(n => n.trim()).filter(n => n);
+                
+                await fetch('/labels', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, numbers })
+                });
+                alert('Label berhasil disimpan!');
+                loadLabels();
+            });
+        }
+
+        async function loadLabel() {
+            const select = document.getElementById('labelSelect');
+            const name = select.value;
+            if (!name) return alert('Pilih label terlebih dahulu!');
+
+            const response = await fetch(`/labels/${encodeURIComponent(name)}`);
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                const textarea = document.getElementById('numbers');
+                const current = textarea.value.trim();
+                const newLines = result.numbers.join('\n');
+                textarea.value = current ? current + '\n' + newLines : newLines;
+                alert(`Berhasil memuat ${result.numbers.length} kontak dari label "${name}".`);
+            }
+        }
+
+        async function deleteLabel() {
+            const select = document.getElementById('labelSelect');
+            const name = select.value;
+            if (!name) return alert('Pilih label yang ingin dihapus!');
+
+            showConfirmModal(`Hapus label "${name}"?`, async () => {
+                await fetch(`/labels/${encodeURIComponent(name)}`, { method: 'DELETE' });
+                alert('Label dihapus!');
+                loadLabels();
+            }, 'Hapus', 'btn-danger');
+        }
+
+        function filterByCountryCode() {
+            const textarea = document.getElementById('numbers');
+            if (!textarea.value.trim()) return alert('Daftar nomor kosong!');
+
+            showInputModal('Filter Kode Negara', 'Masukkan kode (contoh: 62)', (code) => {
+                if (!code) return;
+                
+                const cleanCode = code.replace(/\D/g, '');
+                if (!cleanCode) return alert('Kode negara tidak valid!');
+
+                const lines = textarea.value.split('\n');
+                const filteredLines = [];
+                let removedCount = 0;
+
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine) continue;
+
+                    // Ambil bagian nomor saja (sebelum koma) dan bersihkan karakter non-digit
+                    const numberPart = trimmedLine.split(',')[0].replace(/\D/g, '');
+                    if (numberPart.startsWith(cleanCode)) {
+                        filteredLines.push(trimmedLine);
+                    } else {
+                        removedCount++;
+                    }
+                }
+
+                textarea.value = filteredLines.join('\n');
+                alert(`Filter Selesai!\n✅ Disimpan: ${filteredLines.length} (Kode ${cleanCode})\n🗑️ Dihapus: ${removedCount}`);
+            });
+        }
+
+        // --- Auto Reply Logic ---
+        async function loadAutoReplies() {
+            const list = document.getElementById('autoReplyList');
+            list.innerHTML = 'Loading...';
+            try {
+                const response = await fetch('/autoreply');
+                const rules = await response.json();
+                list.innerHTML = '';
+                
+                if (rules.length === 0) {
+                    list.innerHTML = '<div style="padding:10px; text-align:center; color:#888;">Belum ada rule.</div>';
+                    return;
+                }
+
+                rules.forEach(r => {
+                    const row = document.createElement('div');
+                    row.style.display = 'grid';
+                    row.style.gridTemplateColumns = '1fr 2fr 100px 50px';
+                    row.style.gap = '5px';
+                    row.style.marginBottom = '5px';
+                    row.style.fontSize = '12px';
+                    row.style.alignItems = 'center';
+                    
+                    row.innerHTML = `
+                        <div style="background:var(--bg-body); padding:8px; border-radius:4px;">${r.keyword}</div>
+                        <div style="background:var(--bg-body); padding:8px; border-radius:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${r.response}</div>
+                        <div>${r.type === 'exact' ? 'Persis' : 'Mengandung'}</div>
+                        <button onclick="deleteAutoReply('${r.keyword}')" class="btn-danger btn-sm" style="padding:2px 5px;">🗑️</button>
+                    `;
+                    list.appendChild(row);
+                });
+            } catch (e) {
+                list.innerHTML = 'Error loading rules.';
+            }
+        }
+
+        async function saveAutoReply() {
+            const keyword = document.getElementById('arKeyword').value;
+            const response = document.getElementById('arResponse').value;
+            const type = document.getElementById('arType').value;
+
+            if (!keyword || !response) return alert('Keyword dan Respon harus diisi!');
+
+            await fetch('/autoreply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keyword, response, type })
+            });
+            
+            document.getElementById('arKeyword').value = '';
+            document.getElementById('arResponse').value = '';
+            loadAutoReplies();
+        }
+
+        async function deleteAutoReply(keyword) {
+            if (!confirm(`Hapus rule untuk keyword "${keyword}"?`)) return;
+            await fetch(`/autoreply/${encodeURIComponent(keyword)}`, { method: 'DELETE' });
+            loadAutoReplies();
+        }
+
+        async function importChatList() {
+            showConfirmModal('Import nomor dari riwayat chat aktif?', async () => {
+                try {
+                    const response = await fetch('/chats?sessionId=' + currentSessionId);
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        const textarea = document.getElementById('numbers');
+                        const currentText = textarea.value.trim();
+                        const newLines = result.chats.map(m => `${m.number},${m.name}`).join('\n');
+                        textarea.value = currentText ? currentText + '\n' + newLines : newLines;
+                        alert(`Berhasil mengimpor ${result.chats.length} kontak dari riwayat chat.`);
+                    } else {
+                        alert('Gagal: ' + result.message);
+                    }
+                } catch (e) {
+                    alert('Error: ' + e.message);
+                }
+            }, 'Import', 'btn-primary');
+        }
+
+        // --- LIVE CHAT LOGIC ---
+        let allChats = [];
+        let activeChatId = null;
+        let messagePollingInterval;
+        let lastMessageSignature = '';
+        let isChatListHovered = false;
+        let lastEventTimestamp = 0;
+
+        // --- Reply Logic ---
+        let currentReplyMessageId = null;
+
+        // --- Context Menu Logic (Edit/Delete) ---
+        let ctxMsgId = null;
+        let ctxMsgBody = null;
+
+        // --- Forward Logic ---
+        let currentForwardList = [];
+
+        function ctxForwardAction() {
+            if (!ctxMsgId) return;
+            openForwardModal();
+        }
+
+        async function openForwardModal() {
+            const modal = document.getElementById('forwardModal');
+            const select = document.getElementById('forwardSelect');
+            const loading = document.getElementById('forwardLoading');
+            const searchInput = document.getElementById('forwardSearchInput');
+            
+            searchInput.value = '';
+            modal.style.display = 'flex';
+            select.innerHTML = '<option value="">-- Pilih Tujuan --</option>';
+            select.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                // Gunakan endpoint /api/chats untuk mendapatkan daftar chat terbaru (personal & grup)
+                const response = await fetch('/api/chats?sessionId=' + currentSessionId);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    currentForwardList = result.chats;
+                    renderForwardOptions(currentForwardList);
+                } else {
+                    alert('Gagal memuat chat: ' + result.message);
+                    closeForwardModal();
+                    return;
+                }
+            } catch (e) {
+                alert('Gagal menghubungi server.');
+                closeForwardModal();
+            } finally {
+                loading.style.display = 'none';
+                select.disabled = false;
+            }
+        }
+
+        function closeForwardModal() {
+            document.getElementById('forwardModal').style.display = 'none';
+        }
+
+        function renderForwardOptions(chats) {
+            const select = document.getElementById('forwardSelect');
+            select.innerHTML = '<option value="">-- Pilih Tujuan --</option>';
+            const fragment = document.createDocumentFragment();
+            chats.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.text = c.name || c.number;
+                fragment.appendChild(option);
+            });
+            select.appendChild(fragment);
+        }
+
+        let forwardSearchTimeout;
+        function filterForwardChats() {
+            clearTimeout(forwardSearchTimeout);
+            forwardSearchTimeout = setTimeout(() => {
+                const query = document.getElementById('forwardSearchInput').value.toLowerCase();
+                const filtered = currentForwardList.filter(c => (c.name && c.name.toLowerCase().includes(query)) || c.number.includes(query));
+                renderForwardOptions(filtered);
+            }, 300);
+        }
+
+        async function submitForward() {
+            const select = document.getElementById('forwardSelect');
+            const targetChatId = select.value;
+            if (!targetChatId) return alert('Pilih tujuan terlebih dahulu!');
+            if (!ctxMsgId) return;
+
+            const btn = document.querySelector('#forwardModal .btn-primary');
+            const originalText = btn.innerText;
+            btn.innerText = 'Mengirim...';
+            btn.disabled = true;
+
+            try {
+                await fetch(`/api/messages/${encodeURIComponent(ctxMsgId)}/forward`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ sessionId: currentSessionId, targetChatId })
+                });
+                alert('Pesan berhasil diteruskan!');
+                closeForwardModal();
+            } catch (e) {
+                alert('Gagal meneruskan pesan: ' + e.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function showContextMenu(e, id, body, fromMe) {
+            e.preventDefault(); // Mencegah menu klik kanan bawaan browser
+            ctxMsgId = id;
+            ctxMsgBody = body;
+            
+            const menu = document.getElementById('msgContextMenu');
+            const btnEdit = document.getElementById('ctxEdit');
+            const btnDelEveryone = document.getElementById('ctxDeleteEveryone');
+            
+            // Fitur Edit & Delete Everyone hanya untuk pesan kita sendiri
+            if (fromMe) {
+                btnEdit.style.display = 'flex';
+                btnDelEveryone.style.display = 'flex';
+            } else {
+                btnEdit.style.display = 'none';
+                btnDelEveryone.style.display = 'none';
+            }
+            
+            menu.style.display = 'flex';
+            menu.style.left = e.clientX + 'px';
+            menu.style.top = e.clientY + 'px';
+            
+            // Tutup menu jika klik di tempat lain
+            document.addEventListener('click', hideContextMenu, { once: true });
+        }
+
+        function hideContextMenu() {
+            document.getElementById('msgContextMenu').style.display = 'none';
+        }
+
+        function ctxEditAction() {
+            if (!ctxMsgId) return;
+            showInputModal('Edit Pesan', 'Masukkan pesan baru...', async (newText) => {
+                if (!newText) return;
+                try {
+                    await fetch(`/api/messages/${encodeURIComponent(ctxMsgId)}/edit`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ sessionId: currentSessionId, newBody: newText })
+                    });
+                    // Update UI manual agar cepat (opsional, polling akan update juga)
+                    const msgEl = document.getElementById(`msg-${ctxMsgId}`);
+                    if (msgEl) {
+                        const contentDiv = msgEl.querySelector('div:nth-child(2)'); // Asumsi struktur div
+                        if (contentDiv) contentDiv.innerText = newText;
+                    }
+                } catch (e) { alert('Gagal mengedit pesan'); }
+            });
+            // Pre-fill input dengan pesan lama
+            setTimeout(() => document.getElementById('inputModalValue').value = ctxMsgBody, 50);
+        }
+
+        function ctxDeleteAction(everyone) {
+            if (!ctxMsgId) return;
+            const confirmMsg = everyone ? 'Hapus pesan ini untuk SEMUA ORANG?' : 'Hapus pesan ini untuk SAYA SAJA?';
+            showConfirmModal(confirmMsg, async () => {
+                try {
+                    await fetch(`/api/messages/${encodeURIComponent(ctxMsgId)}/delete`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ sessionId: currentSessionId, everyone })
+                    });
+                    // Hapus dari UI
+                    const msgEl = document.getElementById(`msg-${ctxMsgId}`);
+                    if (msgEl) msgEl.remove();
+                } catch (e) { alert('Gagal menghapus pesan'); }
+            }, 'Hapus', 'btn-danger');
+        }
+
+        function setReply(id, name, body) {
+            currentReplyMessageId = id;
+            document.getElementById('replyName').innerText = name;
+            document.getElementById('replyText').innerText = body;
+            document.getElementById('replyContext').style.display = 'flex';
+            document.getElementById('chatMessageInput').focus();
+        }
+
+        function cancelReply() {
+            currentReplyMessageId = null;
+            document.getElementById('replyContext').style.display = 'none';
+        }
+
+        // Event listener untuk mendeteksi hover pada list chat
+        const chatListEl = document.getElementById('chatList');
+        chatListEl.addEventListener('mouseenter', () => { isChatListHovered = true; });
+        chatListEl.addEventListener('mouseleave', () => { 
+            isChatListHovered = false; 
+            loadLiveChats(true); // Update segera saat mouse keluar agar data terbaru muncul
+        });
+
+        async function loadLiveChats(isBackground = false) {
+            // Jika user sedang mengarahkan mouse ke list chat, tunda update agar tidak berkedip/mengganggu klik
+            if (isBackground && isChatListHovered) return;
+            
+            // Jika baru saja ada event real-time (kurang dari 2 detik lalu), tunda polling
+            // agar data lokal yang lebih baru tidak tertimpa data server yang mungkin delay
+            if (isBackground && (Date.now() - lastEventTimestamp < 2000)) return;
+
+            try {
+                const response = await fetch('/api/chats?sessionId=' + currentSessionId);
+                const result = await response.json();
+                if (result.status === 'success') {
+                    allChats = result.chats;
+                    
+                    // Cek apakah sedang mencari, jika ya gunakan filter agar hasil pencarian tidak hilang
+                    const query = document.getElementById('chatSearch').value;
+                    if (query) {
+                        filterChatList();
+                    } else {
+                        renderChatList(allChats);
+                    }
+                }
+            } catch (e) {
+                if (!isBackground) console.error('Gagal memuat chat', e);
+            }
+        }
+
+        function renderChatList(chats) {
+            const container = document.getElementById('chatList');
+            // Simpan posisi scroll agar tidak loncat saat reload otomatis
+            const savedScroll = container.scrollTop;
+            
+            container.innerHTML = '';
+            
+            chats.forEach(chat => {
+                const div = document.createElement('div');
+                div.className = `chat-item ${chat.id === activeChatId ? 'active' : ''}`;
+                div.onclick = () => openChat(chat.id, chat.name);
+                
+                const time = new Date(chat.timestamp * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                // Tambahkan indikator unread (Angka Merah/Hijau) jika ada pesan baru
+                const unreadBadge = chat.unreadCount > 0 
+                    ? `<span style="background:var(--primary); color:white; padding:2px 6px; border-radius:10px; font-size:10px; margin-left:5px;">${chat.unreadCount}</span>` 
+                    : '';
+
+                div.innerHTML = `
+                    <div class="chat-item-header">
+                        <span class="chat-name">${chat.name}</span>
+                        <span class="chat-time">${time}</span>
+                    </div>
+                    <div class="chat-preview" style="display:flex; justify-content:space-between;">
+                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${chat.lastMessage}</span>
+                        ${unreadBadge}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            
+            // Kembalikan posisi scroll
+            if (savedScroll > 0) container.scrollTop = savedScroll;
+        }
+
+        function filterChatList() {
+            const query = document.getElementById('chatSearch').value.toLowerCase();
+            const filtered = allChats.filter(c => c.name.toLowerCase().includes(query) || c.number.includes(query));
+            renderChatList(filtered);
+        }
+
+        function startMessagePolling() {
+            stopMessagePolling();
+            // Poll setiap 3 detik untuk pesan di chat yang sedang aktif
+            messagePollingInterval = setInterval(() => {
+                if (activeChatId) loadChatMessages(activeChatId, false);
+            }, 3000);
+        }
+
+        function stopMessagePolling() {
+            if (messagePollingInterval) {
+                clearInterval(messagePollingInterval);
+                messagePollingInterval = null;
+            }
+        }
+
+        async function loadChatMessages(chatId, initial = false) {
+            if (chatId !== activeChatId) return;
+            
+            const msgContainer = document.getElementById('chatMessages');
+            if (initial) {
+                msgContainer.innerHTML = '<div style="text-align:center; margin-top:20px;">Memuat pesan...</div>';
+            }
+
+            try {
+                const response = await fetch(`/api/chats/${encodeURIComponent(chatId)}/messages?sessionId=${currentSessionId}`);
+                const result = await response.json();
+                
+                if (chatId !== activeChatId) return;
+
+                if (result.status === 'success') {
+                    // OPTIMASI: Cek apakah data berubah menggunakan signature (gabungan ID pesan)
+                    // Agar tidak berat me-render ulang DOM jika tidak ada pesan baru
+                    const newSignature = result.messages.map(m => m.id).join(',');
+                    if (!initial && newSignature === lastMessageSignature) {
+                        return; // Tidak ada perubahan, skip render agar ringan
+                    }
+                    lastMessageSignature = newSignature;
+
+                    // Cek posisi scroll user (apakah sedang di paling bawah?)
+                    const isAtBottom = (msgContainer.scrollTop + msgContainer.clientHeight) >= (msgContainer.scrollHeight - 100);
+                    const oldScrollTop = msgContainer.scrollTop;
+
+                    msgContainer.innerHTML = '';
+                    result.messages.forEach(msg => appendMessageToView(msg));
+                    
+                    if (initial || isAtBottom) {
+                        scrollToBottom();
+                    } else {
+                        // Jika user sedang scroll ke atas (baca history), jangan paksa scroll ke bawah
+                        msgContainer.scrollTop = oldScrollTop;
+                    }
+                }
+            } catch (e) {
+                if (initial) msgContainer.innerHTML = 'Gagal memuat pesan.';
+            }
+        }
+
+        function closeChatMobile() {
+            document.querySelector('.chat-layout').classList.remove('mobile-active');
+            activeChatId = null;
+            cancelReply();
+            stopMessagePolling();
+        }
+
+        async function openChat(chatId, name) {
+            activeChatId = chatId;
+            lastMessageSignature = ''; // Reset signature saat ganti chat
+            document.getElementById('activeChatName').innerText = name;
+            cancelReply(); // Reset reply saat ganti chat
+            
+            // Reset Status
+            const statusEl = document.getElementById('activeChatStatus');
+            if(statusEl) {
+                statusEl.innerText = '';
+                statusEl.style.color = 'var(--text-secondary)';
+            }
+
+            document.getElementById('chatHeader').style.display = 'flex';
+            document.getElementById('chatInputArea').style.display = 'flex';
+            
+            // Activate mobile view
+            document.querySelector('.chat-layout').classList.add('mobile-active');
+            
+            // Mark as Read (Centang Biru) saat chat dibuka
+            fetch(`/api/chats/${encodeURIComponent(chatId)}/mark-read`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ sessionId: currentSessionId })
+            }).catch(console.error);
+
+            // Highlight active item
+            renderChatList(allChats); // Re-render to update active class
+
+            stopMessagePolling();
+            // Cek status Online
+            fetchPresence(chatId);
+            
+            await loadChatMessages(chatId, true);
+            startMessagePolling();
+        }
+
+        function appendMessageToView(msg) {
+            const container = document.getElementById('chatMessages');
+            
+            // Cegah duplikat (jika pesan sudah ada)
+            if (document.getElementById(`msg-${msg.id}`)) return;
+
+            const div = document.createElement('div');
+            div.id = `msg-${msg.id}`;
+            div.className = `message-bubble ${msg.fromMe ? 'out' : 'in'}`;
+            
+            // Fitur Reply: Double Click pada pesan
+            div.style.cursor = 'pointer';
+            div.title = 'Klik dua kali untuk membalas';
+            div.ondblclick = () => {
+                const sender = msg.fromMe ? 'Anda' : (msg.senderName || document.getElementById('activeChatName').innerText);
+                const text = msg.hasMedia ? (msg.type === 'image' ? '📷 Foto' : '📁 Media') : msg.body;
+                setReply(msg.id, sender, text);
+            };
+
+            // Fitur Context Menu: Klik Kanan pada pesan
+            div.oncontextmenu = (e) => {
+                showContextMenu(e, msg.id, msg.body, msg.fromMe);
+            };
+
+            if (msg.isPending) div.classList.add('pending');
+            
+            let senderHtml = '';
+            // Tampilkan nama pengirim jika ada (biasanya untuk grup)
+            if (!msg.fromMe && msg.senderName) {
+                senderHtml = `<div style="font-size: 11px; font-weight: bold; color: #e542a3; margin-bottom: 2px;">${msg.senderName}</div>`;
+            }
+
+            let content = msg.body;
+            if (msg.hasMedia) {
+                if (msg.type === 'image') {
+                    const mediaUrl = `/api/messages/${encodeURIComponent(msg.id)}/media?sessionId=${currentSessionId}`;
+                    content = `<div style="margin-bottom:5px;"><img src="${mediaUrl}" alt="Loading..." style="max-width: 200px; border-radius: 8px; cursor: pointer;" onclick="window.open(this.src, '_blank')"></div>` + (msg.body || '');
+                } else if (msg.type === 'sticker') {
+                    const mediaUrl = `/api/messages/${encodeURIComponent(msg.id)}/media?sessionId=${currentSessionId}`;
+                    content = `<div style="margin-bottom:5px;"><img src="${mediaUrl}" alt="Sticker" style="max-width: 120px;"></div>`;
+                } else {
+                    content = '📁 <i>(Media/File)</i><br>' + (msg.body || '');
+                }
+            }
+            
+            const time = new Date(msg.timestamp * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            div.innerHTML = `
+                ${senderHtml}
+                <div>${content}</div>
+                <div class="message-time">${time}</div>
+            `;
+            container.appendChild(div);
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('chatMessages');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatMessageInput');
+            const message = input.value;
+            if (!message || !activeChatId) return;
+
+            input.value = ''; // Clear input immediately
+            input.focus(); // Kembalikan fokus ke input
+
+            // Optimistic UI: Tampilkan pesan langsung (Pending) agar terasa cepat
+            const tempId = 'temp-' + Date.now();
+            appendMessageToView({
+                id: tempId,
+                fromMe: true,
+                body: message,
+                timestamp: Math.floor(Date.now() / 1000),
+                hasMedia: false,
+                isPending: true
+            });
+            
+            // Scroll ke bawah dengan sedikit delay untuk memastikan render selesai
+            setTimeout(scrollToBottom, 50);
+            
+            const payload = { 
+                sessionId: currentSessionId, 
+                message: message 
+            };
+            if (currentReplyMessageId) payload.quotedMessageId = currentReplyMessageId;
+
+            try {
+                await fetch(`/api/chats/${encodeURIComponent(activeChatId)}/send`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                // Pesan akan muncul via event 'new_message' (message_create)
+                cancelReply(); // Tutup mode reply setelah kirim
+            } catch (e) {
+                alert('Gagal mengirim pesan');
+                const el = document.getElementById(`msg-${tempId}`);
+                if(el) el.style.backgroundColor = '#ffdddd'; // Indikasi error
+            }
+        }
+
+        async function sendChatFile(input) {
+            const file = input.files[0];
+            if (!file || !activeChatId) return;
+
+            // Tampilkan loading indicator
+            const loadingEl = document.getElementById('chatFileUploadLoading');
+            if (loadingEl) loadingEl.style.display = 'block';
+
+            // Ambil caption dari input teks jika ada
+            const captionInput = document.getElementById('chatMessageInput');
+            const caption = captionInput.value;
+
+            const formData = new FormData();
+            formData.append('sessionId', currentSessionId);
+            formData.append('file', file);
+            if (caption) formData.append('caption', caption);
+            if (currentReplyMessageId) formData.append('quotedMessageId', currentReplyMessageId);
+
+            // Reset UI
+            captionInput.value = '';
+            cancelReply();
+            input.value = ''; // Reset input file
+
+            try {
+                await fetch(`/api/chats/${encodeURIComponent(activeChatId)}/send-media`, {
+                    method: 'POST',
+                    body: formData
+                });
+            } catch (e) {
+                alert('Gagal mengirim file: ' + e.message);
+            } finally {
+                // Sembunyikan loading indicator
+                if (loadingEl) loadingEl.style.display = 'none';
+            }
+        }
+
+        let typingTimeout;
+        function handleChatInputKey(e) {
+            if (e.key === 'Enter') {
+                sendChatMessage();
+                return;
+            }
+
+            // Kirim status "Typing..." ke lawan bicara
+            if (!typingTimeout) {
+                fetch(`/api/chats/${encodeURIComponent(activeChatId)}/state`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ sessionId: currentSessionId, state: 'typing' })
+                }).catch(console.error);
+            }
+
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                fetch(`/api/chats/${encodeURIComponent(activeChatId)}/state`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ sessionId: currentSessionId, state: 'clear' })
+                }).catch(console.error);
+                typingTimeout = null;
+            }, 3000); // Stop typing setelah 3 detik diam
+        }
+
+        async function fetchPresence(chatId) {
+            const statusEl = document.getElementById('activeChatStatus');
+            if(!statusEl) return;
+            
+            try {
+                const response = await fetch(`/api/chats/${encodeURIComponent(chatId)}/presence?sessionId=${currentSessionId}`);
+                const result = await response.json();
+                if (result.status === 'success' && result.presence) {
+                    if (result.presence.isOnline) {
+                        statusEl.innerText = 'Online';
+                        statusEl.style.color = 'var(--primary)';
+                    } else if (result.presence.isTyping) {
+                        statusEl.innerText = 'Sedang mengetik...';
+                        statusEl.style.color = 'var(--primary)';
+                    } else {
+                        statusEl.innerText = ''; 
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // Helper: Ambil hanya angka/ID utama (buang @c.us, @s.whatsapp.net, dll)
+        function normalizeId(id) {
+            if (!id) return '';
+            return String(id).split('@')[0];
+        }
+
+        function handleNewMessageEvent(msg) {
+            lastEventTimestamp = Date.now(); // Tandai waktu event terakhir
+
+            // Debugging: Cek di console browser jika pesan tidak muncul
+            // console.log('New Msg:', msg.chatId, 'Active:', activeChatId);
+
+            const msgIdClean = normalizeId(msg.chatId);
+            const activeIdClean = normalizeId(activeChatId);
+
+            // 1. Jika chat yang sedang dibuka adalah chat pengirim pesan, append ke view
+            // Bandingkan ID yang sudah dibersihkan (hanya angkanya saja)
+            const isMatch = activeChatId && (msgIdClean === activeIdClean);
+
+            if (isMatch) {
+                // Hapus pesan pending jika ada (karena pesan asli sudah masuk)
+                const pendingMsgs = document.querySelectorAll('.message-bubble.pending');
+                pendingMsgs.forEach(el => el.remove());
+
+                appendMessageToView(msg);
+                
+                // Scroll ke bawah
+                setTimeout(scrollToBottom, 50);
+                
+                // Jika pesan dari orang lain, tandai read otomatis
+                if (!msg.fromMe) {
+                    fetch(`/api/chats/${encodeURIComponent(activeChatId)}/mark-read`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ sessionId: currentSessionId })
+                    }).catch(console.error);
+                }
+            }
+
+            // 2. Update list chat (pindahkan ke paling atas & update preview)
+            const chatIndex = allChats.findIndex(c => normalizeId(c.id) === msgIdClean);
+            if (chatIndex > -1) {
+                const chat = allChats.splice(chatIndex, 1)[0];
+                chat.lastMessage = msg.body;
+                chat.timestamp = msg.timestamp;
+                // Update counter unread jika chat tidak sedang dibuka
+                if (!isMatch && !msg.fromMe) {
+                    chat.unreadCount = (chat.unreadCount || 0) + 1;
+                }
+                allChats.unshift(chat); // Pindah ke atas
+            } else {
+                // Chat baru (belum ada di list), tambahkan manual agar instan
+                const newChat = {
+                    id: msg.chatId,
+                    name: msg.senderName || normalizeId(msg.chatId), // Nama sementara sampai polling berikutnya
+                    number: normalizeId(msg.chatId),
+                    unreadCount: msg.fromMe ? 0 : 1,
+                    timestamp: msg.timestamp,
+                    isGroup: String(msg.chatId).includes('@g.us'),
+                    lastMessage: msg.body
+                };
+                allChats.unshift(newChat);
+            }
+            renderChatList(allChats);
+        }
+
+        // --- Settings Logic ---
+        async function loadSettings() {
+            try {
+                const response = await fetch('/settings');
+                const settings = await response.json();
+                document.getElementById('webhookUrlInput').value = settings.webhookUrl || '';
+                document.getElementById('aiEnabledInput').checked = settings.aiEnabled || false;
+                document.getElementById('aiSystemPromptInput').value = settings.aiSystemPrompt || '';
+                document.getElementById('aiAllowedTopicsInput').value = settings.aiAllowedTopics || '';
+                document.getElementById('welcomeMessageInput').value = settings.welcomeMessage || '';
+                document.getElementById('aiBlacklistInput').value = (settings.aiBlacklist || []).join(', ');
+                document.getElementById('aiIgnoreGroupsInput').checked = settings.aiIgnoreGroups || false;
+                document.getElementById('arIgnoreGroupsInput').checked = settings.arIgnoreGroups || false;
+                document.getElementById('aiDailyLimitInput').value = settings.aiDailyLimit || 0;
+                document.getElementById('autoRejectCallInput').checked = settings.autoRejectCall || false;
+            } catch (e) {
+                console.error('Gagal memuat pengaturan.', e);
+            }
+        }
+        
+        async function saveSettings() {
+            const webhookUrl = document.getElementById('webhookUrlInput').value;
+            const aiEnabled = document.getElementById('aiEnabledInput').checked;
+            const aiSystemPrompt = document.getElementById('aiSystemPromptInput').value;
+            const aiAllowedTopics = document.getElementById('aiAllowedTopicsInput').value;
+            const welcomeMessage = document.getElementById('welcomeMessageInput').value;
+            const aiBlacklist = document.getElementById('aiBlacklistInput').value.split(',').map(s => s.trim()).filter(s => s);
+            const aiIgnoreGroups = document.getElementById('aiIgnoreGroupsInput').checked;
+            const arIgnoreGroups = document.getElementById('arIgnoreGroupsInput').checked;
+            const aiDailyLimit = document.getElementById('aiDailyLimitInput').value;
+            const autoRejectCall = document.getElementById('autoRejectCallInput').checked;
+            try {
+                await fetch('/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ webhookUrl, aiEnabled, aiSystemPrompt, aiAllowedTopics, welcomeMessage, aiBlacklist, aiIgnoreGroups, arIgnoreGroups, aiDailyLimit, autoRejectCall })
+                });
+                alert('✅ Pengaturan berhasil disimpan!');
+            } catch (e) {
+                alert('Gagal menyimpan: ' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
