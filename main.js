@@ -28,6 +28,11 @@ function startSession(id) {
         puppeteer: {
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox']
+        },
+        // Fix: Paksa gunakan versi WA Web yang stabil agar QR Code muncul
+        webVersionCache: {
+            type: 'remote',
+            remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
         }
     });
 
@@ -78,6 +83,12 @@ function startSession(id) {
         console.log(`[${id}] QR Code received.`);
         sendEvent({ type: 'qr', sessionId: id, data: qr });
         broadcastLog(`[${id}] Silakan scan QR Code.`);
+    });
+
+    // Tambahan: Log progress loading agar tidak bingung jika menunggu lama
+    client.on('loading_screen', (percent, message) => {
+        console.log(`[${id}] Loading Screen: ${percent}% - ${message}`);
+        sendEvent({ type: 'log', message: `Loading WhatsApp: ${percent}%` });
     });
 
     client.on('change_battery', (batteryInfo) => {
