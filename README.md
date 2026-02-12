@@ -44,6 +44,8 @@ Aplikasi broadcast WhatsApp dibangun menggunakan **Node.js** dan library **whats
 2. Buka terminal (Command Prompt/PowerShell) di folder project.
 3. Install dependencies yang dibutuhkan:
    npm install whatsapp-web.js qrcode-terminal express multer xlsx axios electron
+   atau
+   npm i
 
 ## Cara Menjalankan ▶️
 
