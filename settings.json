@@ -1,0 +1,9 @@
+{
+  "webhookUrl": "",
+  "aiEnabled": false,
+  "aiSystemPrompt": "Ai",
+  "aiAllowedTopics": "",
+  "welcomeMessage": "",
+  "aiBlacklist": [],
+  "aiIgnoreGroups": false
+}
